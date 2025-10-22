@@ -1,0 +1,49 @@
+<h1>記事一覧</h1>
+<%= search_form_for @q, url: articles_path, method: :get do |f| %>
+  <%= f.label :article_title_or_lead_text, "タイトルまたはリード文" %>
+  
+  <%= select_tag 'search_type', options_for_select([
+    ['部分一致', 'cont'],
+    ['完全一致', 'eq'],
+    ['前方一致', 'start'],
+    ['後方一致', 'end']
+  ], params[:search_type].presence || 'cont') %>
+
+  <%= f.text_field :article_title_or_lead_text_cont, placeholder: "キーワードを入力", value: @search_term %>
+  <%= f.submit "検索" %>
+  <%= link_to 'クリア', articles_path, class: "clear-button" %>
+<% end %>
+
+<table>
+  <thead>
+    <tr>
+      <th>タイトル</th>
+      <th>詳細</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @articles.each do |article| %>
+      <tr>
+        <td><%= article.article_title %></td>
+        <td><%= link_to '詳細を見る', article_path(article) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchTypeSelect = document.getElementById('search_type');
+    const searchInput = document.querySelector('input[name="q[article_title_or_lead_text_cont]"]');
+    
+    function updateSearchInputName() {
+      const selectedType = searchTypeSelect.value;
+      const currentName = searchInput.getAttribute('name');
+      const newName = currentName.replace(/_(cont|eq|start|end)/, `_${selectedType}`);
+      searchInput.setAttribute('name', newName);
+    }
+
+    updateSearchInputName();
+    searchTypeSelect.addEventListener('change', updateSearchInputName);
+  });
+</script>
