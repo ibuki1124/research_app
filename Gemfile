@@ -57,3 +57,10 @@ gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
 # 検索機能
 gem 'ransack'
+
+# Google AI
+# gem "gemini-ai"
+gem 'google-genai'
+
+# dotenv
+gem 'dotenv-rails', groups: [:development, :test]

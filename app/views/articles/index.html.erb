@@ -14,6 +14,20 @@
   <%= link_to 'クリア', articles_path, class: "clear-button" %>
 <% end %>
 
+<%# ---------------------------------------------------- %>
+<%# 【AI検索結果の表示】 %>
+<% if @ai_articles_summary.present? %>
+  <div style="border: 1px solid #ccc; padding: 15px; margin-top: 20px; background-color: #f9f9f9;">
+    <h2>AIによるインターネット検索結果（「<%= @search_term %>」に関連）</h2>
+    <div class="ai-summary">
+      <%# Markdown形式のテキストをHTMLとして表示する場合は、`safe_join`やHTML変換が必要です %>
+      <%# 簡易表示として<pre>タグを使用します %>
+      <pre><%= @ai_articles_summary %></pre>
+    </div>
+  </div>
+<% end %>
+<%# ---------------------------------------------------- %>
+
 <table>
   <thead>
     <tr>
