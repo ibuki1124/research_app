@@ -60,7 +60,7 @@ gem 'ransack'
 
 # Google AI
 # gem "gemini-ai"
-gem 'google-genai'
+# gem 'google-genai'
 
 # dotenv
 gem 'dotenv-rails', groups: [:development, :test]
