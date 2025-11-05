@@ -17,22 +17,13 @@ class ArticlesController < ApplicationController
     # 【AI検索機能の追加】
     # 検索キーワードが存在する場合のみ、GeminiServiceを呼び出す
     if @search_term.present?
-      # バックグラウンド処理（推奨）
-      # API呼び出しは時間がかかる可能性があるため、
-      # 実際にはSidekiqなどで非同期処理にすることを推奨しますが、
-      # まずは動作確認のため同期的に実行します。
-      @ai_articles_summary = GeminiService.search_related_articles(@search_term)
+      result = GeminiService.search_related_articles(@search_term)
+      @ai_articles = result[:articles]
+      @ai_error = result[:error]
     end
     # ----------------------------------------------------
-
-    # クッキーに検索条件を保存
-    if params[:q].present?
-      cookies[:recent_search_history] = {
-        value: params[:q].to_json,
-        expires: 1.minutes.from_now
-      }
-    end
   end
+  
   def show
     @article = Article.find(params[:id])
   end

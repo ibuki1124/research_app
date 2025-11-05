@@ -16,13 +16,31 @@
 
 <%# ---------------------------------------------------- %>
 <%# 【AI検索結果の表示】 %>
-<% if @ai_articles_summary.present? %>
+<% if @search_term.present? && (@ai_articles.present? || @ai_error.present?) %>
   <div style="border: 1px solid #ccc; padding: 15px; margin-top: 20px; background-color: #f9f9f9;">
     <h2>AIによるインターネット検索結果（「<%= @search_term %>」に関連）</h2>
     <div class="ai-summary">
-      <%# Markdown形式のテキストをHTMLとして表示する場合は、`safe_join`やHTML変換が必要です %>
-      <%# 簡易表示として<pre>タグを使用します %>
-      <pre><%= @ai_articles_summary %></pre>
+      <%# 🚨 エラーメッセージを表示 🚨 %>
+      <% if @ai_error.present? %>
+        <p style="color: red;"><strong><%= @ai_error %></strong></p>
+      <% end %>
+      <%# 記事リストの表示 (エラーがない、またはエラーがあっても記事リストが空の配列として扱われる) %>
+      <% if @ai_articles.present? %>
+        <ul>
+          <% @ai_articles.each do |article| %>
+            <li>
+              <a href="<%= article['url'] %>" target="_blank">
+                <b><%= article['title'] %></b>
+              </a>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <%# エラーがない、かつ記事が取得できなかった場合のメッセージ %>
+        <% if @ai_error.nil? %>
+          <p>関連する記事は見つかりませんでした。</p>
+        <% end %>
+      <% end %>
     </div>
   </div>
 <% end %>
