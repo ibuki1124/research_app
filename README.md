@@ -1,24 +1,101 @@
-# README
+# 🎓 卒業研究プロジェクト  
+## SNS上の偽・誤情報検出と警告提示による認知変容の分析
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+---
 
-Things you may want to cover:
+## 📄 概要  
+本プロジェクトは、「**SNS上の偽・誤情報検出と警告提示による認知変容の分析**」をテーマとする卒業研究の一環として開発されたWebアプリケーションです。  
 
-* Ruby version
+ユーザーが検索した情報に対して **AI（Google Gemini API）による関連情報（ファクトチェック情報など）** を提示することで、**ユーザーの認知や行動の変化を分析するための基盤システム**を構築しています。
 
-* System dependencies
+---
 
-* Configuration
+## 💡 研究背景  
+近年、SNS上で拡散される**偽・誤情報（フェイクニュース）**が深刻な社会問題となっています。  
+偽・誤情報は選挙や災害時の混乱など、社会に深刻な影響を及ぼすケースが多発しています。
 
-* Database creation
+本研究では、**AIによる誤情報検出と警告提示がユーザーの認知変容（情報の信頼度・拡散意図）に与える影響**を分析することを目的としています。
 
-* Database initialization
+---
 
-* How to run the test suite
+## ⚙️ 開発環境  
 
-* Services (job queues, cache servers, search engines, etc.)
+| 項目 | 詳細 | 備考 |
+|------|------|------|
+| **OS / 環境** | EC2 (Amazon Linux 2) | VS CodeからSSH接続で開発 |
+| **Ruby** | 3.1.2 | - |
+| **Rails** | 6.1.7.10 | - |
+| **Python** | 3.9 | - |
+| **AI / LLM** | Google Gemini API | Python経由で利用 |
 
-* Deployment instructions
+---
 
-* ...
+## 🚀 環境構築と起動手順  
+
+プロジェクトをクローンした後、アプリケーションを動作させるために以下の手順を行います。
+
+---
+
+### 1️⃣ 依存関係のインストール  
+
+#### ① Ruby依存関係のインストール
+```bash
+bundle install
+yarn install
+rails db:migrate
+```
+
+#### ② Python仮想環境と依存関係のセットアップ  
+AI検索機能（Gemini API連携）は **Python** で実装されています。
+
+```bash
+# 仮想環境の作成
+python3.9 -m venv venv_gemini
+
+# 仮想環境の有効化
+source venv_gemini/bin/activate
+
+# 依存関係のインストール
+pip install -r requirements.txt
+
+# 作業終了時（または別ターミナル作業時）は無効化
+deactivate
+```
+
+> 💡 **注記:**  
+> AI検索ジョブの実行時、システムは `./venv_gemini/bin/python3.9` のパスを参照します。
+
+---
+
+### 2️⃣ Redisサーバーのセットアップ  
+
+SidekiqとAction Cableのデータ共有基盤として、**Redisサーバー**が必要です。
+
+```bash
+# Redisのインストール（Amazon Linux 2の場合）
+sudo amazon-linux-extras install redis6
+```
+
+---
+
+### 3️⃣ アプリケーションの起動シーケンス  
+
+アプリケーションを完全に動作させるには、以下の **4つのプロセス**を並行して起動します。
+
+| 順序 | プロセス | コマンド | 役割 | 停止方法 |
+|------|-----------|----------|------|-----------|
+| 1 | **# Redisサーバーの起動** | `sudo systemctl start redis` | 一時的なデータ保存 | `sudo systemctl stop redis` |
+| 2 | **Sidekiqワーカー** | `bundle exec sidekiq` | バックグラウンドでAI検索ジョブを実行 | `Ctrl + C` |
+| 3 | **Rails Web/Cable** | `rails s` | Webページ応答とAction Cable接続を管理 | `Ctrl + C` |
+
+すべてのプロセスが起動したら、ブラウザで以下にアクセスしてください👇  
+```
+/articles
+```
+
+---
+
+### ✅ 補足  
+- Sidekiqワーカーの起動とRailsのサーバ起動プロセスを別ターミナルで並行実行してください。  
+
+---
