@@ -1,0 +1,19 @@
+<%# ローカル変数: ai_articles (記事データ), search_term (検索キーワード) %>
+<div style="border: 1px solid #ccc; padding: 15px; margin-top: 20px; background-color: #f9f9f9;">
+  <h2>AIによるインターネット検索結果（「<%= search_term %>」に関連）</h2>
+  <div class="ai-summary">
+    <% if ai_articles.present? %>
+      <ul>
+        <% ai_articles.each do |article| %>
+          <li>
+            <a href="<%= article['url'] %>" target="_blank">
+              <b><%= article['title'] %></b>
+            </a>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p>関連する記事は見つかりませんでした。</p>
+    <% end %>
+  </div>
+</div>

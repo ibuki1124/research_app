@@ -64,3 +64,8 @@ gem 'ransack'
 
 # dotenv
 gem 'dotenv-rails', groups: [:development, :test]
+
+# 非同期通信
+gem 'sidekiq'
+# 一時的なデータ保存用
+gem 'redis', '~> 4.0'

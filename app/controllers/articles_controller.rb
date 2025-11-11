@@ -15,12 +15,11 @@ class ArticlesController < ApplicationController
 
     # ----------------------------------------------------
     # 【AI検索機能の追加】
-    # 検索キーワードが存在する場合のみ、GeminiServiceを呼び出す
+    # 検索キーワードが存在する場合のみ、ジョブを非同期で実行
     if @search_term.present?
-      result = GeminiService.search_related_articles(@search_term)
-      @ai_articles = result[:articles]
-      @ai_error = result[:error]
+      AiSearchJob.perform_later(@search_term, session.id.to_s)
     end
+    @ai_articles = []
     # ----------------------------------------------------
   end
   

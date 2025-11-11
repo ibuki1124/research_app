@@ -15,35 +15,19 @@
 <% end %>
 
 <%# ---------------------------------------------------- %>
-<%# 【AI検索結果の表示】 %>
-<% if @search_term.present? && (@ai_articles.present? || @ai_error.present?) %>
-  <div style="border: 1px solid #ccc; padding: 15px; margin-top: 20px; background-color: #f9f9f9;">
-    <h2>AIによるインターネット検索結果（「<%= @search_term %>」に関連）</h2>
-    <div class="ai-summary">
-      <%# 🚨 エラーメッセージを表示 🚨 %>
-      <% if @ai_error.present? %>
-        <p style="color: red;"><strong><%= @ai_error %></strong></p>
-      <% end %>
-      <%# 記事リストの表示 (エラーがない、またはエラーがあっても記事リストが空の配列として扱われる) %>
-      <% if @ai_articles.present? %>
-        <ul>
-          <% @ai_articles.each do |article| %>
-            <li>
-              <a href="<%= article['url'] %>" target="_blank">
-                <b><%= article['title'] %></b>
-              </a>
-            </li>
-          <% end %>
-        </ul>
-      <% else %>
-        <%# エラーがない、かつ記事が取得できなかった場合のメッセージ %>
-        <% if @ai_error.nil? %>
-          <p>関連する記事は見つかりませんでした。</p>
-        <% end %>
-      <% end %>
+<%# 【非同期AI検索結果のコンテナ】 %>
+<div id="ai-search-results" data-identifier="<%= session.id %>">
+  <hr>
+  <h2>AI検索による関連記事</h2>
+  <% if @search_term.present? %>
+    <%# ジョブ実行中、ここにローディングメッセージを表示 %>
+    <div class="ai-loading-message" style="border: 1px solid #ccc; padding: 15px; margin-top: 20px; background-color: #f9f9f9;">
+      <p>AIが関連記事を検索中です... (30秒程度かかります)</p>
     </div>
-  </div>
-<% end %>
+  <% else %>
+    <p>AI検索を実行するには、キーワードを入力してください。</p>
+  <% end %>
+</div>
 <%# ---------------------------------------------------- %>
 
 <table>
@@ -62,6 +46,9 @@
     <% end %>
   </tbody>
 </table>
+
+<%# Action Cableチャンネル接続用のJavaScriptタグを追記 (行番号に注意) %>
+<%= javascript_pack_tag 'ai_search_channel' %>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {

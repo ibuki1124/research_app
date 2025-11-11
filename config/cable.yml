@@ -1,5 +1,7 @@
 development:
-  adapter: async
+  adapter: redis  # redis に変更
+  url: redis://localhost:6379/1 # Sidekiqと同じRedisを使用
+  channel_prefix: research_app_development # 開発環境用のプレフィックスを設定
 
 test:
   adapter: test
