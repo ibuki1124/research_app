@@ -83,7 +83,7 @@ class FactCheckJob < ApplicationJob
       # Python実行エラー時の処理
       Rails.logger.error "Judgment Python Script Error: #{stderr}"
       # 失敗時はエラーJSONを返す
-      return '{"score": 0, "verdict": "エラー", "reason": "判定プロセス(Python)でエラーが発生しました"}' 
+      return '{"misinformation_score": 0, "verdict": "unverified", "reason": "判定プロセス(Python)でエラーが発生しました"}'
     end
   end
 end

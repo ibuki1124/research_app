@@ -12,6 +12,13 @@ class AiSearchJob < ApplicationJob
     # 2. 結果のレンダリングと通知
     if external_results[:error].present?
       Rails.logger.error "AI Search Error: #{external_results[:error]}"
+      error_html = ApplicationController.render(
+          partial: 'articles/ai_error_results', # エラー表示専用の新しいパーシャルを使用
+          locals: { error_message: external_results[:error] }
+      )
+      ActionCable.server.broadcast("ai_search_#{identifier}", {
+        html: error_html
+      })
     else
       FactCheckJob.perform_later(
         search_term,
@@ -23,5 +30,12 @@ class AiSearchJob < ApplicationJob
     end
   rescue => e
     Rails.logger.error "AI Search Job failed unexpectedly: #{e.message}"
+    error_html = ApplicationController.render(
+        partial: 'articles/ai_error_results',
+        locals: { error_message: "処理中に予期せぬエラーが発生しました。時間を置いて再試行してください。" }
+    )
+    ActionCable.server.broadcast("ai_search_#{identifier}", {
+      html: error_html
+    })
   end
 end

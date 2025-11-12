@@ -1,0 +1,11 @@
+<%# app/views/articles/_ai_error_results.html.erb %>
+<%# locals: { error_message: "..." } %>
+
+<div id="ai-search-results-content" style="border: 2px solid #880000; padding: 15px; margin-top: 20px; background-color: #ffe0e0;">
+  <h3>⚠️ 情報検証エラー ⚠️</h3>
+  <p>情報検証処理中に問題が発生しました。ブラウザの表示が更新されなかったため、以下のエラーを確認してください。</p>
+  
+  <p><strong>エラー詳細:</strong> <%= error_message %></p>
+  
+  <p>時間を置いて再度検索するか、管理者にお問い合わせください。</p>
+</div>
