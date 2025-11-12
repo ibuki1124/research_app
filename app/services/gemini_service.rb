@@ -80,8 +80,15 @@ class GeminiService
             article['url'] = resolve_single_url(article['url'])
             Rails.logger.info "URL Resolved: #{original_url} -> #{article['url']}"
 
-            # リダイレクト失敗時のフォールバック (Google検索リンクへの置き換え)
-            if article['url'].include?('vertexaisearch.cloud.google.com')
+            # リダイレクト失敗時のフォールバック
+            if article['url'].start_with?('URL_INVALID_NON_200:')
+              title = article['title']
+              search_query = CGI.escape(title)
+              article['url'] = "https://www.google.com/search?q=#{search_query}"
+              Rails.logger.warn "URL Fallback (404/Expired): Google Search link used for: #{title}"
+  
+            # リダイレクトURLがそのまま残った場合のフォールバック 
+            elsif article['url'].include?('vertexaisearch.cloud.google.com')
               search_query = CGI.escape(article['title'])
               article['url'] = "https://www.google.com/search?q=#{search_query}"
               Rails.logger.warn "URL Fallback: Google Search link used for: #{article['title']}"
