@@ -17,7 +17,17 @@ class ArticlesController < ApplicationController
     # 【AI検索機能の追加】
     # 検索キーワードが存在する場合のみ、ジョブを非同期で実行
     if @search_term.present?
-      AiSearchJob.perform_later(@search_term, session.id.to_s)
+      # 1. 内部検索結果をJSON形式に変換
+      internal_info_for_ai = @articles.map do |article|
+        { id: article.id, title: article.article_title, lead: article.lead_text }
+      end.to_json
+
+      # 2. 外部検索ジョブ（第1段階）を開始
+      AiSearchJob.perform_later(
+        @search_term,             # ユーザーの検索キーワード
+        internal_info_for_ai,     # ★ Ransackの内部検索結果のJSON
+        session.id.to_s           # Action Cableの識別子
+      )
     end
     @ai_articles = []
     # ----------------------------------------------------

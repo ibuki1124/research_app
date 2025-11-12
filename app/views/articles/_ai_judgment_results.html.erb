@@ -1,0 +1,41 @@
+<%# app/views/articles/_ai_judgment_results.html.erb %>
+
+<% 
+  verdict = judgment_data['verdict']
+  
+  if verdict == 'misinformation'
+    color_code = '#c00'; display_text = '誤報'
+    bg_color = '#fdd'
+  elsif verdict == 'unverified'
+    color_code = '#fa0'; display_text = '情報不足（審議中）' # 審議中の場合は黄色/オレンジ
+    bg_color = '#ffe'
+  else # 'true' またはその他
+    color_code = '#0a0'; display_text = '真実'
+    bg_color = '#dfd'
+  end
+%>
+
+<div id="ai-search-results-content" style="border: 1px solid <%= color_code %>; padding: 15px; margin-top: 20px; background-color: <%= bg_color %>;">
+  
+  <h3>🚨 AIによる情報検証結果: <%= display_text %> 🚨</h3> 
+  
+  <p><strong>誤報可能性スコア:</strong> <%= judgment_data['misinformation_score'] %>%</p> 
+  <p><strong>判定根拠:</strong> <%= judgment_data['reason'] %></p>
+</div>
+
+<div style="border: 1px solid #ccc; padding: 15px; margin-top: 10px; background-color: #f9f9f9;">
+  <h4>参照された外部ソース</h4>
+  <% if external_articles.present? %>
+    <ul>
+      <% external_articles.each do |article| %>
+        <li>
+          <a href="<%= article['url'] %>" target="_blank">
+            <b><%= article['title'] %></b>
+          </a>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p>参照された外部ソースは見つかりませんでした。</p>
+  <% end %>
+</div>

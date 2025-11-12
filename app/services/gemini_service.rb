@@ -82,9 +82,9 @@ class GeminiService
 
             # リダイレクト失敗時のフォールバック (Google検索リンクへの置き換え)
             if article['url'].include?('vertexaisearch.cloud.google.com')
-               search_query = CGI.escape(article['title'])
-               article['url'] = "https://www.google.com/search?q=#{search_query}"
-               Rails.logger.warn "URL Fallback: Google Search link used for: #{article['title']}"
+              search_query = CGI.escape(article['title'])
+              article['url'] = "https://www.google.com/search?q=#{search_query}"
+              Rails.logger.warn "URL Fallback: Google Search link used for: #{article['title']}"
             end
           end
         end
@@ -107,6 +107,32 @@ class GeminiService
       error_message = "AI検索でエラーが発生しました。（Python実行エラー）"
       Rails.logger.error "Python Script Error: #{stderr}"
       return { articles: [], error: error_message }
+    end
+  end
+
+  # FactCheckJob が呼び出す判定専用のメソッド
+  def self.analyze_for_misinformation(full_prompt)
+    python_executable = Rails.root.join('venv_gemini', 'bin', 'python3.9').to_s
+    
+    # 判定専用スクリプトのパス
+    python_judgment_script = Rails.root.join('lib', 'python', 'gemini_judgment.py').to_s
+    gemini_api_key = ENV.fetch('GEMINI_API_KEY')
+    
+    # [executable, script_path, prompt, api_key] の順で引数を渡す
+    command = [python_executable, python_judgment_script, full_prompt, gemini_api_key]
+    
+    Rails.logger.info "Executing Judgment command..."
+    stdout, stderr, status = Open3.capture3(*command)
+
+    if status.success?
+      raw_json = stdout.to_s.strip
+      Rails.logger.info "Judgment Python Raw Output: #{raw_json}"
+      # 判定結果はシンプルなJSON形式を想定
+      return raw_json 
+    else
+      Rails.logger.error "Judgment Python Script Error: #{stderr}"
+      # 失敗時はエラーJSONを返すか、適切なエラー処理を行う
+      return '{"score": 0, "verdict": "エラー", "reason": "判定プロセスでエラーが発生しました"}' 
     end
   end
 end
