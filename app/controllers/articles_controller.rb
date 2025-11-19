@@ -13,10 +13,12 @@ class ArticlesController < ApplicationController
       @search_term = nil
     end
 
+    @use_ai = params[:use_ai_check].present?
+
     # ----------------------------------------------------
     # 【AI検索機能の追加】
     # 検索キーワードが存在する場合のみ、ジョブを非同期で実行
-    if @search_term.present?
+    if @search_term.present? && @use_ai
       # 1. 内部検索結果をJSON形式に変換
       internal_info_for_ai = @articles.map do |article|
         { id: article.id, title: article.article_title, lead: article.lead_text }

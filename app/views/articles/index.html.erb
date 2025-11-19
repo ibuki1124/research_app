@@ -10,6 +10,9 @@
   ], params[:search_type].presence || 'cont') %>
 
   <%= f.text_field :article_title_or_lead_text_cont, placeholder: "キーワードを入力", value: @search_term %>
+
+  <%= check_box_tag :use_ai_check, '1', true %> 
+  <%= label_tag :use_ai_check, 'AIによる情報検証を行う' %>
   <%= f.submit "検索" %>
   <%= link_to 'クリア', articles_path, class: "clear-button" %>
 <% end %>
@@ -18,14 +21,14 @@
 <%# 【非同期AI検索結果のコンテナ】 %>
 <div id="ai-search-results" data-identifier="<%= session.id %>">
   <hr>
-  <h2>AI検索による関連記事</h2>
-  <% if @search_term.present? %>
+  <% if @search_term.present? && @use_ai %>
+    <h2>AI検索による関連記事</h2>
     <%# ジョブ実行中、ここにローディングメッセージを表示 %>
     <div class="ai-loading-message" style="border: 1px solid #ccc; padding: 15px; margin-top: 20px; background-color: #f9f9f9;">
       <p>AIが関連記事を検索中です... (30秒程度かかります)</p>
     </div>
-  <% else %>
-    <p>AI検索を実行するには、キーワードを入力してください。</p>
+  <% elsif @search_term.present? %>
+    <p>AI検索を実行するには、AI検索を有効化してください。</p>
   <% end %>
 </div>
 <%# ---------------------------------------------------- %>
