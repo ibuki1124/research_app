@@ -18,9 +18,14 @@ if (identifier) {
 
     // チャンネルからデータが届いた時の処理
     received(data) {
-      if (container) {
-        // コンテナ全体を受信したHTMLで置き換える
-        container.innerHTML = data.html; 
+      const searchDataElement = document.getElementById('current-search-data');
+      // 現在表示されているページの検索キーワードを取得
+      const activeSearchTerm = searchDataElement ? searchDataElement.dataset.term : null;
+      // Action Cableメッセージに含まれる検索キーワードを取得
+      const receivedSearchTerm = data.search_term;
+      const isMatch = (container && activeSearchTerm === receivedSearchTerm);
+      if (isMatch) {
+        container.innerHTML = data.html;
       }
     }
   });

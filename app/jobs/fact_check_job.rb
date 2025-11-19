@@ -39,7 +39,8 @@ class FactCheckJob < ApplicationJob
 
     # 4. Action Cableで最終結果をブラウザに通知
     ActionCable.server.broadcast("ai_search_#{identifier}", {
-      html: final_html # フロントエンドが画面を置き換える
+      html: final_html, # フロントエンドが画面を置き換える
+      search_term: search_term
     })
 
     Rails.logger.info "Fact Check Job completed and results broadcasted."

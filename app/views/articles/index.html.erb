@@ -20,6 +20,9 @@
 <%# ---------------------------------------------------- %>
 <%# 【非同期AI検索結果のコンテナ】 %>
 <div id="ai-search-results" data-identifier="<%= session.id %>">
+  <% if @search_term.present? %>
+    <div id="current-search-data" data-term="<%= @search_term %>" style="display: none;"></div>
+  <% end %>
   <hr>
   <% if @search_term.present? && @use_ai %>
     <h2>AI検索による関連記事</h2>

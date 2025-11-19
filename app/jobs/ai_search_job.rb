@@ -17,7 +17,8 @@ class AiSearchJob < ApplicationJob
           locals: { error_message: external_results[:error] }
       )
       ActionCable.server.broadcast("ai_search_#{identifier}", {
-        html: error_html
+        html: error_html,
+        search_term: search_term
       })
     else
       FactCheckJob.perform_later(
@@ -35,7 +36,8 @@ class AiSearchJob < ApplicationJob
         locals: { error_message: "処理中に予期せぬエラーが発生しました。時間を置いて再試行してください。" }
     )
     ActionCable.server.broadcast("ai_search_#{identifier}", {
-      html: error_html
+      html: error_html,
+      search_term: search_term
     })
   end
 end
