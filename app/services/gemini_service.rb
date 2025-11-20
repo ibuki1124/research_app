@@ -7,7 +7,7 @@ class GeminiService
   private
   def self.resolve_single_url(url)
     # 外部Pythonスクリプトでリダイレクトを追跡し、安定URLを取得
-    python_executable = Rails.root.join('venv_gemini', 'bin', 'python3.9').to_s
+    python_executable = Rails.root.join('venv_gemini', 'bin', 'python3').to_s
     python_resolver = Rails.root.join('lib', 'python', 'resolve_url.py').to_s
     
     stdout, stderr, status = Open3.capture3(python_executable, python_resolver, url)
@@ -25,7 +25,7 @@ class GeminiService
   def self.search_related_articles(search_term)
     
     # Pythonスクリプトの実行コマンドを構築
-    python_executable = Rails.root.join('venv_gemini', 'bin', 'python3.9').to_s
+    python_executable = Rails.root.join('venv_gemini', 'bin', 'python3').to_s
     python_gemini = Rails.root.join('lib', 'python', 'gemini_search.py').to_s
     gemini_api_key = ENV.fetch('GEMINI_API_KEY')
     
@@ -119,7 +119,7 @@ class GeminiService
 
   # FactCheckJob が呼び出す判定専用のメソッド
   def self.analyze_for_misinformation(full_prompt)
-    python_executable = Rails.root.join('venv_gemini', 'bin', 'python3.9').to_s
+    python_executable = Rails.root.join('venv_gemini', 'bin', 'python3').to_s
     
     # 判定専用スクリプトのパス
     python_judgment_script = Rails.root.join('lib', 'python', 'gemini_judgment.py').to_s

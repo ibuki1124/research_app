@@ -63,7 +63,7 @@ class FactCheckJob < ApplicationJob
 
   # Gemini API呼び出しロジック（Fact Check Job専用）
   def call_gemini_api_for_judgment(prompt)
-    python_executable = Rails.root.join('venv_gemini', 'bin', 'python3.9').to_s
+    python_executable = Rails.root.join('venv_gemini', 'bin', 'python3').to_s
     
     # 判定専用スクリプトのパス
     python_judgment_script = Rails.root.join('lib', 'python', 'gemini_judgment.py').to_s
