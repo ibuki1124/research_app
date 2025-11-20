@@ -72,3 +72,5 @@ gem 'sidekiq'
 gem 'redis', '~> 4.0'
 
 gem 'mysql2', '>= 0.4.4', '< 0.6.0' , group: :production
+
+gem 'concurrent-ruby', '1.3.4'
