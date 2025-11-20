@@ -25,7 +25,7 @@
 | **OS / 環境** | EC2 (Amazon Linux 2) | VS CodeからSSH接続で開発 |
 | **Ruby** | 3.1.2 | - |
 | **Rails** | 6.1.7.10 | - |
-| **Python** | 3.9 | - |
+| **Python** | 3.12 | - |
 | **AI / LLM** | Google Gemini API | Python経由で利用 |
 
 ---
@@ -50,7 +50,7 @@ AI検索機能（Gemini API連携）は **Python** で実装されています�
 
 ```bash
 # 仮想環境の作成
-python3.9 -m venv venv_gemini
+python3 -m venv venv_gemini
 
 # 仮想環境の有効化
 source venv_gemini/bin/activate
@@ -63,7 +63,7 @@ deactivate
 ```
 
 > 💡 **注記:**  
-> AI検索ジョブの実行時、システムは `./venv_gemini/bin/python3.9` のパスを参照します。
+> AI検索ジョブの実行時、システムは `./venv_gemini/bin/python3` のパスを参照します。
 
 ---
 
@@ -74,6 +74,10 @@ SidekiqとAction Cableのデータ共有基盤として、**Redisサーバー**�
 ```bash
 # Redisのインストール（Amazon Linux 2の場合）
 sudo amazon-linux-extras install redis6
+```
+```bash
+# Redisのインストール（Ubuntu の場合）
+sudo apt install redis-server
 ```
 
 ---
