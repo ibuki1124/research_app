@@ -8,7 +8,7 @@ class CreateArticles < ActiveRecord::Migration[6.1]
       t.text :lead_text
       t.text :verification_target
       t.text :verification_process
-      t.string :judgment
+      t.text :judgment
       t.text :source_reference
 
       t.timestamps
