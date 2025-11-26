@@ -63,7 +63,13 @@ class FactCheckJob < ApplicationJob
 
   # Gemini API呼び出しロジック（Fact Check Job専用）
   def call_gemini_api_for_judgment(prompt)
-    python_executable = Rails.root.join('venv_gemini', 'bin', 'python3').to_s
+    if Rails.env.production? || ENV['RAILS_ENV'] == 'production'
+      # Heroku (production) 環境の場合: PATH にある 'python3' を使用
+      python_executable = 'python3'
+    else
+      # ローカル環境 (development/test) の場合: ローカル仮想環境のパスを使用
+      python_executable = Rails.root.join('venv_gemini', 'bin', 'python3').to_s
+    end
     
     # 判定専用スクリプトのパス
     python_judgment_script = Rails.root.join('lib', 'python', 'gemini_judgment.py').to_s
