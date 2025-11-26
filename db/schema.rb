@@ -20,7 +20,7 @@ ActiveRecord::Schema.define(version: 2025_10_01_234519) do
     t.text "lead_text"
     t.text "verification_target"
     t.text "verification_process"
-    t.string "judgment"
+    t.text "judgment"
     t.text "source_reference"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
