@@ -14,14 +14,20 @@
         <%= f.text_field :article_title_or_lead_text_cont, placeholder: "キーワードを入力", value: @search_term, class: 'form-control' %>
       </div>
       <div class="col-md-auto form-check">
-        <%= check_box_tag :use_ai_check, '1', true, class: 'form-check-input' %>
-        <%= label_tag :use_ai_check, 'AIによる情報検証を行う', class: 'form-check-label' %>
+        <%= f.label :use_ai_check, "AIによる情報検証", class: 'form-label' %>
+        <% is_on = params[:use_ai_check] == '1' || params[:use_ai_check].nil? %>
+        <% current_value = is_on ? '1' : '' %>
+        <%= hidden_field_tag :use_ai_check, current_value, id: 'use-ai-hidden-field' %>
+        <button type="button" 
+                id="ai-check-toggle" 
+                class="btn <%= is_on ? 'btn-success' : 'btn-danger' %>" 
+                data-current-state="<%= is_on ? '1' : '0' %>">
+          <%= is_on ? 'ON' : 'OFF' %>
+        </button>
       </div>
-      <div class="col-md-auto">
-        <%= f.submit "検索", class: 'btn btn-primary' %>
-      </div>
-      <div class="col-md-auto">
-        <%= link_to 'クリア', articles_path, class: "btn btn-outline-secondary" %>
+      <div class="col-md-auto d-flex justify-content-end">
+        <div class="me-3"><%= f.submit "検索", class: 'btn btn-primary' %></div>
+        <div><%= link_to "クリア", root_path, id: 'clear-search-link', class: 'btn btn-outline-secondary' %>
       </div>
     </div>
   <% end %>
