@@ -1,4 +1,29 @@
+import $ from 'jquery';
+window.$ = $;
+
+let $loadingSpinner = null;
+
+function checkScroll() {
+    if ($(window).scrollTop() >= $(document).height() - $(window).height() - 200) {
+        // 1. 次のページへのリンクを取得
+        const nextLink = $('#pagination-links a[rel="next"]');
+        if (nextLink.length) {
+            $(window).off('scroll');
+            // 2. 💡 ローディングアイコンを表示
+            if ($loadingSpinner) {
+                $loadingSpinner.show();
+            }
+            // 3. 💡 3秒間の遅延を設定 (3000ミリ秒)
+            setTimeout(function() {
+                // 4. 遅延後、AJAXリクエストをトリガー
+                nextLink[0].click();
+            }, 2000);
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    $loadingSpinner = $('#loading-spinner');
     // ----------------------------------------------------------------------
     // 1. Ransack検索タイプの切り替え処理 (既存コードを維持)
     // ----------------------------------------------------------------------
@@ -121,4 +146,21 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = clearLink.href; // <a href> の root_path へ遷移
         });
     }
+    $(document).ready(function() { 
+        // 初回ロード時、スクロールイベントを設定
+        $(window).on('scroll', checkScroll);
+    });
+    $(document).on('ajax:complete', function() {
+        // 1. 💡 ローディングアイコンを非表示
+        if ($loadingSpinner) {
+            $loadingSpinner.hide();
+        }
+        // 2. ページネーションリンクがまだ存在する場合のみ、スクロールイベントを再開
+        // この setTimeout は、DOMの描画完了を待つためのもので、短い時間でOK
+        setTimeout(function() {
+            if ($('#pagination-links').length) {
+                $(window).on('scroll', checkScroll);
+            }
+        }, 100);
+    });
 });

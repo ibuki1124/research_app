@@ -59,24 +59,18 @@
         <th>タイトル</th>
       </tr>
     </thead>
-    <tbody>
-      <% @articles.each do |article| %>
-        <tr>
-          <td>
-            <a href="#" 
-              data-bs-toggle="modal" 
-              data-bs-target="#externalModal" 
-              data-detail-url="<%= article.detail_page_url %>"
-              data-article-title="<%= article.article_title %>"
-              class="article-link"
-            >
-              <%= article.article_title %>
-            </a>
-          </td>
-        </tr>
-      <% end %>
+    <tbody id="articles-list"> <%# 💡 IDを追加 %>
+      <%= render partial: 'article', collection: @articles %>
     </tbody>
   </table>
+
+  <div id="loading-spinner" style="display: none; text-align: center;" class="mt-0">
+    <div class="loader">Loading...</div>
+  </div>
+
+  <div id="pagination-links" style="display: none;">
+    <%= paginate @articles, remote: true %>
+  </div>
 
   <%# Action Cableチャンネル接続用のJavaScriptタグを追記 %>
   <%= javascript_pack_tag 'ai_search_channel' %>

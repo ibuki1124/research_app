@@ -1,0 +1,17 @@
+// app/views/articles/index.js.erb (再確認)
+
+// 💡 修正: グローバルな jQuery の準備を待ってから実行する
+$(function() { 
+
+  // 1. 新しい記事のHTMLを #articles-list の末尾に追加
+  $('#articles-list').append('<%= j(render @articles) %>');
+
+  // 2. ページネーションリンクを更新
+  <% if @articles.next_page %>
+    // 次のページがある場合、次のページへのリンクに更新
+    $('#pagination-links').html('<%= j(paginate @articles, remote: true) %>');
+  <% else %>
+    // 全ページ読み込み完了の場合、リンク要素を削除
+    $('#pagination-links').remove();
+  <% end %>
+});
