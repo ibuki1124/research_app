@@ -11,26 +11,41 @@ require 'csv'
 # CSVファイルのパスをRails.root.joinで指定
 file_path = Rails.root.join('db', 'seeds', 'fact_check_articles_full_data.csv')
 
-# CSVファイルを読み込み、各行のデータをArticleモデルに保存
-# BOMを無視してUTF-8として読み込む
+# データを一時的に保持する配列（ハッシュの配列として格納）
+articles_to_insert = []
+
+puts "CSVデータの読み込みを開始します..."
+
+# CSVファイルを読み込み、各行のデータを配列に格納
 CSV.foreach(file_path, headers: true, encoding: 'UTF-8') do |row|
-  # 「詳細ページURL」をユニークキーとして、データが存在すれば更新、なければ新規作成
-  Article.find_or_create_by!(detail_page_url: row['詳細ページURL']) do |article|
-    # データを代入する前に、文字列をクリーンアップする処理を追加
-    # データベースの文字コードで受け入れられない文字（主に絵文字）を削除します。
-    verification_target_cleaned = row['検証対象'] ? 
-                                  row['検証対象'].encode('UTF-8', invalid: :replace, undef: :replace, replace: '') : 
-                                  nil
-    article.tag = row['タグ']
-    article.article_title = row['記事タイトル']
-    article.published_date = row['記事投稿日']
-    article.lead_text = row['リード文']
-    # 💡 修正箇所: クリーンアップされた値を使用
-    article.verification_target = verification_target_cleaned
-    article.verification_process = row['検証過程']
-    article.judgment = row['判定']
-    article.source_reference = row['出典・参考']
-  end
+  
+  # データを代入する前に、文字列をクリーンアップ (文字コードエラー回避のため維持)
+  verification_target_cleaned = row['検証対象'] ? 
+                                row['検証対象'].encode('UTF-8', invalid: :replace, undef: :replace, replace: '') : 
+                                nil
+  
+  # ハッシュとして配列に追加
+  articles_to_insert << {
+    tag: row['タグ'],
+    article_title: row['記事タイトル'],
+    published_date: row['記事投稿日'],
+    detail_page_url: row['詳細ページURL'],
+    lead_text: row['リード文'],
+    verification_target: verification_target_cleaned,
+    verification_process: row['検証過程'],
+    judgment: row['判定'],
+    source_reference: row['出典・参考'],
+    
+    # insert_all はタイムスタンプを自動設定しないため、手動で追加
+    created_at: Time.current,
+    updated_at: Time.current
+  }
 end
 
-puts "CSVデータのArticleモデルへの保存が完了しました。"
+puts "CSVデータ #{articles_to_insert.size} 件の読み込みが完了しました。"
+puts "バルク挿入を開始します（重複チェックなし）..."
+
+# 💡 標準機能 insert_all の実行 (バリデーションやコールバックはスキップされます)
+Article.insert_all(articles_to_insert)
+
+puts "CSVデータのArticleモデルへのバルク挿入が完了しました。🎉"
