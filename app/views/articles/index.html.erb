@@ -1,74 +1,98 @@
-<h1>記事一覧</h1>
-<%= search_form_for @q, url: articles_path, method: :get do |f| %>
-  <%= f.label :article_title_or_lead_text, "タイトルまたはリード文" %>
-  
-  <%= select_tag 'search_type', options_for_select([
-    ['部分一致', 'cont'],
-    ['完全一致', 'eq'],
-    ['前方一致', 'start'],
-    ['後方一致', 'end']
-  ], params[:search_type].presence || 'cont') %>
-
-  <%= f.text_field :article_title_or_lead_text_cont, placeholder: "キーワードを入力", value: @search_term %>
-
-  <%= check_box_tag :use_ai_check, '1', true %> 
-  <%= label_tag :use_ai_check, 'AIによる情報検証を行う' %>
-  <%= f.submit "検索" %>
-  <%= link_to 'クリア', articles_path, class: "clear-button" %>
-<% end %>
-
-<%# ---------------------------------------------------- %>
-<%# 【非同期AI検索結果のコンテナ】 %>
-<div id="ai-search-results" data-identifier="<%= session.id %>">
-  <% if @search_term.present? %>
-    <div id="current-search-data" data-term="<%= @search_term %>" style="display: none;"></div>
-  <% end %>
-  <hr>
-  <% if @search_term.present? && @use_ai %>
-    <h2>AI検索による関連記事</h2>
-    <%# ジョブ実行中、ここにローディングメッセージを表示 %>
-    <div class="ai-loading-message" style="border: 1px solid #ccc; padding: 15px; margin-top: 20px; background-color: #f9f9f9;">
-      <p>AIが関連記事を検索中です... (30秒程度かかります)</p>
+<div class="container mt-5">
+  <h1>記事一覧</h1>
+  <%= search_form_for @q, url: articles_path, method: :get, html: { class: 'mb-4 p-3 border rounded' } do |f| %>
+    <div class="row g-3 align-items-end">
+      <div class="col-md-auto">
+        <%= f.label :article_title_or_lead_text, "タイトルまたはリード文", class: 'form-label' %>
+      </div>
+      <div class="col-md-3">
+        <%= select_tag 'search_type', options_for_select([
+          ['部分一致', 'cont'],['完全一致', 'eq'],['前方一致', 'start'],['後方一致', 'end']
+        ], params[:search_type].presence || 'cont'), class: 'form-select' %>
+      </div>
+      <div class="col-md-5">
+        <%= f.text_field :article_title_or_lead_text_cont, placeholder: "キーワードを入力", value: @search_term, class: 'form-control' %>
+      </div>
+      <div class="col-md-auto form-check">
+        <%= check_box_tag :use_ai_check, '1', true, class: 'form-check-input' %>
+        <%= label_tag :use_ai_check, 'AIによる情報検証を行う', class: 'form-check-label' %>
+      </div>
+      <div class="col-md-auto">
+        <%= f.submit "検索", class: 'btn btn-primary' %>
+      </div>
+      <div class="col-md-auto">
+        <%= link_to 'クリア', articles_path, class: "btn btn-outline-secondary" %>
+      </div>
     </div>
-  <% elsif @search_term.present? %>
-    <p>AI検索を実行するには、AI検索を有効化してください。</p>
   <% end %>
-</div>
-<%# ---------------------------------------------------- %>
 
-<table>
-  <thead>
-    <tr>
-      <th>タイトル</th>
-      <th>詳細</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @articles.each do |article| %>
-      <tr>
-        <td><%= article.article_title %></td>
-        <td><%= link_to '詳細を見る', article_path(article) %></td>
-      </tr>
+  <%# ---------------------------------------------------- %>
+  <%# 【非同期AI検索結果のコンテナ】 %>
+  <div id="ai-search-results" data-identifier="<%= session.id %>">
+    <% if @search_term.present? %>
+      <div id="current-search-data" data-term="<%= @search_term %>" style="display: none;"></div>
     <% end %>
-  </tbody>
-</table>
+    <hr>
+    <% if @search_term.present? && @use_ai %>
+      <h2>AI検索による関連記事</h2>
+      <%# ジョブ実行中、ここにローディングメッセージを表示 %>
+      <div class="ai-loading-message alert alert-info" role="alert">
+        <p>AIが関連記事を検索中です... (30秒程度かかります)</p>
+      </div>
+    <% elsif @search_term.present? %>
+      <div class="alert alert-warning" role="alert">
+        <p>AI検索を実行するには、AI検索を有効化してください。</p>
+      </div>
+    <% end %>
+  </div>
+  <%# ---------------------------------------------------- %>
 
-<%# Action Cableチャンネル接続用のJavaScriptタグを追記 (行番号に注意) %>
-<%= javascript_pack_tag 'ai_search_channel' %>
+  <table class="table table-hover mt-4">
+    <thead class="table-light">
+      <tr>
+        <th>タイトル</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @articles.each do |article| %>
+        <tr>
+          <td>
+            <a href="#" 
+              data-bs-toggle="modal" 
+              data-bs-target="#externalModal" 
+              data-detail-url="<%= article.detail_page_url %>"
+              data-article-title="<%= article.article_title %>"
+              class="article-link"
+            >
+              <%= article.article_title %>
+            </a>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const searchTypeSelect = document.getElementById('search_type');
-    const searchInput = document.querySelector('input[name="q[article_title_or_lead_text_cont]"]');
-    
-    function updateSearchInputName() {
-      const selectedType = searchTypeSelect.value;
-      const currentName = searchInput.getAttribute('name');
-      const newName = currentName.replace(/_(cont|eq|start|end)/, `_${selectedType}`);
-      searchInput.setAttribute('name', newName);
-    }
+  <%# Action Cableチャンネル接続用のJavaScriptタグを追記 %>
+  <%= javascript_pack_tag 'ai_search_channel' %>
+  <%= javascript_pack_tag 'articles_index' %>
+</div>
 
-    updateSearchInputName();
-    searchTypeSelect.addEventListener('change', updateSearchInputName);
-  });
-</script>
+<div class="modal fade" id="externalModal" tabindex="-1" aria-labelledby="externalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 90vw; height: 90vh;">
+        <div class="modal-content h-100">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="externalModalLabel">参考記事</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 d-flex flex-column">
+                <div class="iframe-container overflow-hidden "style="flex: 1 1 auto; min-height: 0;">
+                    <iframe id="embeddedIframe" src="" loading="lazy" class="w-100 h-100 border-0"></iframe>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-start">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                <a id="openInNewTab" href="#" target="_blank" class="btn btn-outline-primary">元サイトで開く (別タブ)</a>
+            </div>
+        </div>
+    </div>
+</div>
