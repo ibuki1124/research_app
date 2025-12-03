@@ -167,4 +167,34 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 100);
     });
+    // ----------------------------------------------------------------------
+    // 4. 【新規】検索クリアボタンの処理
+    // ----------------------------------------------------------------------
+    const clearButton = document.getElementById('clear-search-link');
+    const searchForm = clearButton.closest('form'); // フォーム全体を取得
+
+    if (clearButton && searchTypeSelect && toggleButton && hiddenField) {
+        clearButton.addEventListener('click', () => {
+            // 1. 検索タイプをデフォルト値に戻す (cont: 部分一致)
+            searchTypeSelect.value = 'cont';
+            // 2. AI検証トグルを強制的にOFFの状態に設定
+            toggleButton.checked = false;
+            hiddenField.value = ''; // 隠しフィールドの値もクリア
+            // 3. 検索フィールドの値をクリア
+            const normalInput = document.getElementById('search-input-field');
+            const aiTextarea = document.getElementById('search-input-textarea');
+            if (normalInput) {
+                normalInput.value = '';
+            }
+            if (aiTextarea) {
+                aiTextarea.value = '';
+            }
+            // 4. AI検証トグルOFFの状態にUIを再同期し、name属性を適切に設定し直す
+            // toggleSearchInput内で、normalInputにname属性が設定され、aiTextareaからname属性が削除される
+            toggleSearchInput(false);
+            // 5. Ransackのq[...をクリアするために、フォーム内のすべてのq[...]という名前のフィールドをクリア
+            // 検索実行後にモーダルを開いたときに残っている可能性のある古いRansackクエリをクリア
+            $(searchForm).find('input[name^="q["]').val('');
+        });
+    }
 });
