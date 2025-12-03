@@ -15,7 +15,7 @@
       </div>
       <div class="col-md-auto form-check">
         <%= f.label :use_ai_check, "AIによる情報検証", class: 'form-label' %>
-        <% is_on = params[:use_ai_check] == '1' || params[:use_ai_check].nil? %>
+        <% is_on = params[:use_ai_check] == '1' %>
         <% current_value = is_on ? '1' : '' %>
         <%= hidden_field_tag :use_ai_check, current_value, id: 'use-ai-hidden-field' %>
         <button type="button" 
