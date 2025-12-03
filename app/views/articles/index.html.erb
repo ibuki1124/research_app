@@ -1,36 +1,9 @@
 <div class="container mt-5">
   <h1>記事一覧</h1>
-  <%= search_form_for @q, url: articles_path, method: :get, html: { class: 'mb-4 p-3 border rounded' } do |f| %>
-    <div class="row g-3 align-items-end">
-      <div class="col-md-auto">
-        <%= f.label :article_title_or_lead_text, "タイトルまたはリード文", class: 'form-label' %>
-      </div>
-      <div class="col-md-3">
-        <%= select_tag 'search_type', options_for_select([
-          ['部分一致', 'cont'],['完全一致', 'eq'],['前方一致', 'start'],['後方一致', 'end']
-        ], params[:search_type].presence || 'cont'), class: 'form-select' %>
-      </div>
-      <div class="col-md-5">
-        <%= f.text_field :article_title_or_lead_text_cont, placeholder: "キーワードを入力", value: @search_term, class: 'form-control' %>
-      </div>
-      <div class="col-md-auto form-check">
-        <%= f.label :use_ai_check, "AIによる情報検証", class: 'form-label' %>
-        <% is_on = params[:use_ai_check] == '1' %>
-        <% current_value = is_on ? '1' : '' %>
-        <%= hidden_field_tag :use_ai_check, current_value, id: 'use-ai-hidden-field' %>
-        <button type="button" 
-                id="ai-check-toggle" 
-                class="btn <%= is_on ? 'btn-success' : 'btn-danger' %>" 
-                data-current-state="<%= is_on ? '1' : '0' %>">
-          <%= is_on ? 'ON' : 'OFF' %>
-        </button>
-      </div>
-      <div class="col-md-auto d-flex justify-content-end">
-        <div class="me-3"><%= f.submit "検索", class: 'btn btn-primary' %></div>
-        <div><%= link_to "クリア", root_path, id: 'clear-search-link', class: 'btn btn-outline-secondary' %>
-      </div>
-    </div>
-  <% end %>
+  <%# 検索モーダルを開くボタンを設置 %>
+  <button type="button" class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#searchModal">
+    🔎 検索・絞り込み
+  </button>
 
   <%# ---------------------------------------------------- %>
   <%# 【非同期AI検索結果のコンテナ】 %>
@@ -76,6 +49,82 @@
   <%= javascript_pack_tag 'ai_search_channel' %>
   <%= javascript_pack_tag 'articles_index' %>
 </div>
+
+<%# ======================================================= %>
+<%# 【新規】検索モーダルの定義 =============================== %>
+<%# ======================================================= %>
+<div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="searchModalLabel">記事の検索・絞り込み</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%= search_form_for @q, url: articles_path, method: :get do |f| %>
+        <div class="modal-body">
+          <div class="row g-3 align-items-end mb-4">
+            <%# --- 1. 検索タイプ --- %>
+            <div class="col-md-auto">
+              <%= f.label :article_title_or_lead_text, "タイトルまたはリード文", class: 'form-label' %>
+            </div>
+            <div class="col-md-4">
+              <%= select_tag 'search_type', options_for_select([
+                ['部分一致', 'cont'],['完全一致', 'eq'],['前方一致', 'start'],['後方一致', 'end']
+              ], params[:search_type].presence || 'cont'), class: 'form-select', id: 'search_type' %>
+            </div>
+            <%# --- 2. AI検証トグル --- %>
+            <div class="col-md-auto ms-auto">
+              <%= f.label :use_ai_check, "AI情報検証", class: 'form-label d-block text-end' %>
+              <% is_on = params[:use_ai_check] == '1' %>
+              <%= hidden_field_tag :use_ai_check, (is_on ? '1' : ''), id: 'use-ai-hidden-field' %>
+              <div class="form-check form-switch d-flex justify-content-end align-items-center mt-1">
+                <input class="form-check-input" type="checkbox" role="switch" id="ai-check-toggle" <%= 'checked' if is_on %>>
+                <label class="form-check-label ms-2" for="ai-check-toggle" id="ai-check-label">
+                  <%= is_on ? '検証 ON' : '検証 OFF' %>
+                </label>
+              </div>
+            </div>
+          </div>
+          <%# --- 3. 【新規】入力フィールドのコンテナ --- %>
+          <div id="search-input-container">
+            <%# 通常のテキストフィールド (デフォルト) %>
+            <div id="normal-search-field" style="<%= 'display: none;' if is_on %>">
+              <%= text_field_tag "search_placeholder", @search_term,
+                                placeholder: "キーワードを入力", 
+                                class: 'form-control', 
+                                id: 'search-input-field',
+                                # 💡 修正: nameはダミーのまま維持
+                                name: (is_on ? '' : "search_placeholder"), 
+                                # 💡 修正: Ransackのベース名から q[ と ] を削除し、純粋なキーのみを保持
+                                data: { ransack_base: "article_title_or_lead_text" } %>
+            </div>
+            <%# AI検索用テキストエリア (AI ON時) %>
+            <div id="ai-search-textarea" style="<%= 'display: none;' unless is_on %>">
+              <%= text_area_tag "search_placeholder", @search_term,
+                                placeholder: "詳細な質問や文章を入力してください (AI検証に最適)",
+                                class: 'form-control',
+                                id: 'search-input-textarea',
+                                rows: 5,
+                                name: (is_on ? "search_placeholder" : ''),
+                                data: { ransack_base: "article_title_or_lead_text" } %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+          <div>
+            <%# ページ遷移を防ぎ、フォームの内容を初期状態にリセットするボタン %>
+            <button type="reset" id="clear-search-link" class="btn btn-outline-secondary">クリア</button>
+          </div>
+          <div class="d-flex">
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">キャンセル</button>
+            <%= f.submit "検索実行", class: 'btn btn-primary' %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+<%# ======================================================= %>
 
 <div class="modal fade" id="externalModal" tabindex="-1" aria-labelledby="externalModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered" style="height: 90vh;">

@@ -13,7 +13,7 @@ function checkScroll() {
             if ($loadingSpinner) {
                 $loadingSpinner.show();
             }
-            // 3. 💡 3秒間の遅延を設定 (3000ミリ秒)
+            // 3. 💡 2秒間の遅延を設定
             setTimeout(function() {
                 // 4. 遅延後、AJAXリクエストをトリガー
                 nextLink[0].click();
@@ -25,27 +25,33 @@ function checkScroll() {
 document.addEventListener('DOMContentLoaded', function() {
     $loadingSpinner = $('#loading-spinner');
     // ----------------------------------------------------------------------
-    // 1. Ransack検索タイプの切り替え処理 (既存コードを維持)
+    // 1. Ransack検索タイプの切り替え処理
     // ----------------------------------------------------------------------
     const searchTypeSelect = document.getElementById('search_type');
-    // 検索インプットのセレクタを汎用的に修正
-    const searchInput = document.querySelector('input[name^="q[article_title_or_lead_text"]'); 
+    const NAME_ATTR_PATTERN = 'q\\[article_title_or_lead_text';
+    // 入力フィールドのコンテナと要素の定義をDOM取得可能にする
+    const normalSearchField = document.getElementById('normal-search-field');
+    const aiSearchTextarea = document.getElementById('ai-search-textarea');
+
+    // *DOM要素は関数内で毎回取得し、最新の状態を反映させる*
+    function getActiveInput() {
+        const activeElement = $(`#search-input-container input:visible, #search-input-container textarea:visible`)[0];
+        return activeElement;
+    }
 
     function updateSearchInputName() {
+        const searchInput = getActiveInput();
         if (!searchTypeSelect || !searchInput) return;
-        
+        // data属性からRansackのベース名を取得 (例: q[article_title_or_lead_text)
+        const baseName = searchInput.dataset.ransackBase; // q[article_title_or_lead_text
         const selectedType = searchTypeSelect.value;
-        const currentName = searchInput.getAttribute('name');
-        
-        // 正規表現を修正し、末尾の検索タイプ（cont|eq|start|end）を確実に置き換える
-        // 末尾の ']' を考慮
-        const newName = currentName.replace(/_(cont|eq|start|end)\]/, `_${selectedType}]`);
+        const newName = `q[${baseName}_${selectedType}]`;
         searchInput.setAttribute('name', newName);
     }
 
-    if (searchTypeSelect && searchInput) {
-        updateSearchInputName();
-        searchTypeSelect.addEventListener('change', updateSearchInputName);
+    // 初回ロード時の初期name属性の設定は、toggleSearchInputで実行されるため削除
+    if (searchTypeSelect) {
+        searchTypeSelect.addEventListener('change', updateSearchInputName); // 検索タイプ変更時
     }
 
     // ----------------------------------------------------------------------
@@ -53,50 +59,86 @@ document.addEventListener('DOMContentLoaded', function() {
     // ----------------------------------------------------------------------
     const toggleButton = document.getElementById('ai-check-toggle');
     const hiddenField = document.getElementById('use-ai-hidden-field');
-    
-    // トグルボタンのクリックイベント
-    if (toggleButton && hiddenField) {
-        toggleButton.addEventListener('click', () => {
-            let currentState = toggleButton.getAttribute('data-current-state');
-            let newState = (currentState === '1') ? '0' : '1';
-            let newText = (newState === '1') ? 'ON' : 'OFF';
+    const aiCheckLabel = document.getElementById('ai-check-label');
 
-            // UI更新 (クラスを確実に削除/追加)
-            toggleButton.classList.remove('btn-success', 'btn-danger');
-            toggleButton.classList.add(newState === '1' ? 'btn-success' : 'btn-danger');
-            toggleButton.textContent = newText;
-            toggleButton.setAttribute('data-current-state', newState);
+    // AI検証ON/OFF時の表示を切り替える関数
+    function toggleSearchInput(isAiCheckOn) {
+        const normalInput = document.getElementById('search-input-field');
+        const aiTextarea = document.getElementById('search-input-textarea');
+        
+        const currentActive = isAiCheckOn ? aiTextarea : normalInput;
+        const currentInactive = isAiCheckOn ? normalInput : aiTextarea;
 
-            // 💡 OFF (0) の場合、値を空にしてパラメータを送信させない
-            if (newState === '0') {
-                hiddenField.value = ''; 
+        // name属性を動的に設定/削除し、サーバーへの送信を制御する
+        if (currentActive) {
+            currentActive.parentNode.style.display = 'block'; // 表示
+            const baseName = currentActive.dataset.ransackBase;
+            const selectedType = searchTypeSelect.value;
+            const newName = `q[${baseName}_${selectedType}]`;
+            currentActive.setAttribute('name', newName);
+        }
+        if (currentInactive) {
+            currentInactive.removeAttribute('name');
+            currentInactive.parentNode.style.display = 'none'; // 非表示
+        }
+        aiCheckLabel.textContent = isAiCheckOn ? '検証 ON' : '検証 OFF';
+        console.log("Toggle AI Check:", isAiCheckOn ? 'ON' : 'OFF');
+    }
+    // トグルボタンの変更イベント
+    if (toggleButton && hiddenField && normalSearchField && aiSearchTextarea) {
+        // 初回ロード時の状態判定
+        const isInitialAiCheckOn = hiddenField.value === '1';
+        // HTML側のチェックボックスの状態をサーバー側の値に合わせる
+        toggleButton.checked = isInitialAiCheckOn;
+        // 初回ロード時の表示調整 (name属性設定も実行される)
+        toggleSearchInput(isInitialAiCheckOn);
+        // eventListenerは'change'を使用
+        toggleButton.addEventListener('change', () => {
+            const isChecked = toggleButton.checked;
+            // 隠しフィールドの値を設定
+            hiddenField.value = isChecked ? '1' : '';
+            // 表示の切り替えとname属性の設定/削除
+            toggleSearchInput(isChecked);
+            // 検索フィールド間で値を引き継ぐ
+            const normalInput = document.getElementById('search-input-field');
+            const aiTextarea = document.getElementById('search-input-textarea');
+            if (isChecked) {
+                // OFFからONに切り替えた場合 (normal -> textarea)
+                aiTextarea.value = normalInput.value;
             } else {
-                hiddenField.value = '1';
+                // ONからOFFに切り替えた場合 (textarea -> normal)
+                normalInput.value = aiTextarea.value;
             }
         });
     }
 
     // ----------------------------------------------------------------------
-    // 3. モーダル関連のJavaScript (クリア後の安定性強化)
+    // 3. モーダル関連のJavaScript (検索モーダルの再同期処理を追加)
     // ----------------------------------------------------------------------
     const externalModal = document.getElementById('externalModal');
     const iframeElement = document.getElementById('embeddedIframe');
     const modalTitleElement = document.getElementById('externalModalLabel');
     const openInNewTabLink = document.getElementById('openInNewTab');
-    
-    // 💡 モーダルが表示される直前のイベントを捕捉
+    // 検索モーダル
+    const searchModal = document.getElementById('searchModal');
+    if (searchModal && toggleButton) {
+        // 検索モーダルが表示される直前のイベントを捕捉
+        searchModal.addEventListener('show.bs.modal', function() {
+            // 現在のチェック状態に合わせてUIを強制的に再同期する
+            const isCurrentAiCheckOn = toggleButton.checked;
+            toggleSearchInput(isCurrentAiCheckOn); // name属性と表示を再設定
+        });
+    }
+    // 外部モーダル関連（既存コード）
     if (externalModal) {
         externalModal.addEventListener('show.bs.modal', function (event) {
             const button = event.relatedTarget;
-            // 💡 buttonが存在しないか、データがない場合は処理を中断
             if (!button) {
                 console.error("Clicked element (relatedTarget) not found.");
                 return;
             }
-            
             const url = button.getAttribute('data-detail-url');
             const title = button.getAttribute('data-article-title');
-
             if (url) {
                 iframeElement.src = url;
                 openInNewTabLink.href = url;
@@ -105,58 +147,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 iframeElement.src = 'about:blank'; // リンク切れの場合
                 openInNewTabLink.classList.add('d-none');
             }
-
-            modalTitleElement.textContent = title || '参考記事'; // titleがない場合はデフォルト
+            modalTitleElement.textContent = title || '参考記事';
         });
-
-        // モーダルが閉じられたときにiframeのsrcをクリア
         externalModal.addEventListener('hidden.bs.modal', function () {
             iframeElement.src = '';
             modalTitleElement.textContent = '参考記事';
         });
     }
-
-    // ----------------------------------------------------------------------
-    // 4. 新規: クリアボタンの処理
-    // ----------------------------------------------------------------------
-    const clearLink = document.getElementById('clear-search-link');
-    if (clearLink) {
-        clearLink.addEventListener('click', function(e) {
-            e.preventDefault(); // リンクのデフォルト動作（即座の遷移）をキャンセル
-
-            // 1. フォームのリセット (テキストフィールドなどをクリア)
-            const form = document.querySelector('form');
-            if (form) {
-                form.reset(); // フォームをブラウザのデフォルト初期状態に戻す
-            }
-            
-            // 2. AI検証ボタンの状態をデフォルト (ON/1) にリセット
-            if (toggleButton && hiddenField) {
-                // UIをON/緑に強制リセット
-                toggleButton.classList.remove('btn-danger');
-                toggleButton.classList.add('btn-success');
-                toggleButton.textContent = 'ON';
-                toggleButton.setAttribute('data-current-state', '1');
-                
-                // 隠しフィールドの値をデフォルトの '1' に設定
-                hiddenField.value = '1';
-            }
-            
-            // 3. root_pathへ遷移 (検索パラメータなしでリロード)
-            window.location.href = clearLink.href; // <a href> の root_path へ遷移
-        });
-    }
-    $(document).ready(function() { 
-        // 初回ロード時、スクロールイベントを設定
+    $(document).ready(function() {
         $(window).on('scroll', checkScroll);
     });
     $(document).on('ajax:complete', function() {
-        // 1. 💡 ローディングアイコンを非表示
         if ($loadingSpinner) {
             $loadingSpinner.hide();
         }
-        // 2. ページネーションリンクがまだ存在する場合のみ、スクロールイベントを再開
-        // この setTimeout は、DOMの描画完了を待つためのもので、短い時間でOK
         setTimeout(function() {
             if ($('#pagination-links').length) {
                 $(window).on('scroll', checkScroll);
