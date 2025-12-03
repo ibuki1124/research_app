@@ -37,8 +37,4 @@ class ArticlesController < ApplicationController
       format.js   # スクロール時のAJAXリクエスト時
     end
   end
-  
-  def show
-    @article = Article.find(params[:id])
-  end
 end
