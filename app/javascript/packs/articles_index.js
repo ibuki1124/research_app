@@ -22,7 +22,7 @@ function checkScroll() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('turbolinks:load', function() {
     $loadingSpinner = $('#loading-spinner');
     // ----------------------------------------------------------------------
     // 1. Ransack検索タイプの切り替え処理

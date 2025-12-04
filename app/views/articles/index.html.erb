@@ -1,9 +1,11 @@
 <div class="container mt-5">
-  <h1>記事一覧</h1>
-  <%# 検索モーダルを開くボタンを設置 %>
-  <button type="button" class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#searchModal">
-    🔎 検索・絞り込み
-  </button>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <%= link_to "フェイクニュース検索サイト", root_path, class: "h1 link-underline link-underline-opacity-0" %>
+    <%# 検索モーダルを開くボタンを設置 %>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#searchModal" role="button" aria-label="検索・絞り込みを開く" style="text-decoration: none; color: inherit;">
+      <i class="fa-solid fa-magnifying-glass fa-2x"></i>
+    </a>
+  </div>
 
   <%# ---------------------------------------------------- %>
   <%# 【非同期AI検索結果のコンテナ】 %>
