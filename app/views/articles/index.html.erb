@@ -60,56 +60,98 @@
         <h5 class="modal-title" id="searchModalLabel">記事の検索・絞り込み</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
+      <%# --- 💡 修正: タブナビゲーションを追加 --- %>
+      <ul class="nav nav-tabs" id="searchTab" role="tablist">
+        <li class="nav-item flex-fill" role="presentation">
+          <%# activeクラスは、現在の検索パラメータ（params[:q][:tag_in]）に応じて動的に設定することも可能ですが、ここではデフォルトをキーワードにします %>
+          <button class="nav-link w-100 active" id="keyword-tab" data-bs-toggle="tab" data-bs-target="#keyword-pane" type="button" role="tab" aria-controls="keyword-pane" aria-selected="true">キーワード検索</button>
+        </li>
+        <li class="nav-item flex-fill" role="presentation">
+          <button class="nav-link w-100" id="tag-tab" data-bs-toggle="tab" data-bs-target="#tag-pane" type="button" role="tab" aria-controls="tag-pane" aria-selected="false">タグ検索</button>
+        </li>
+      </ul>
       <%= search_form_for @q, url: articles_path, method: :get do |f| %>
-        <div class="modal-body">
-          <div class="row g-3 align-items-end mb-4">
-            <%# --- 1. 検索タイプ --- %>
-            <div class="col-md-auto">
-              <%= f.label :article_title_or_lead_text, "タイトルまたはリード文", class: 'form-label' %>
-            </div>
-            <div class="col-md-4">
-              <%= select_tag 'search_type', options_for_select([
-                ['部分一致', 'cont'],['完全一致', 'eq'],['前方一致', 'start'],['後方一致', 'end']
-              ], params[:search_type].presence || 'cont'), class: 'form-select', id: 'search_type' %>
-            </div>
-            <%# --- 2. AI検証トグル --- %>
-            <div class="col-md-auto ms-auto">
-              <%= f.label :use_ai_check, "AI情報検証", class: 'form-label d-block text-end' %>
-              <% is_on = params[:use_ai_check] == '1' %>
-              <%= hidden_field_tag :use_ai_check, (is_on ? '1' : ''), id: 'use-ai-hidden-field' %>
-              <div class="form-check form-switch d-flex justify-content-end align-items-center mt-1">
-                <input class="form-check-input" type="checkbox" role="switch" id="ai-check-toggle" <%= 'checked' if is_on %>>
-                <label class="form-check-label ms-2" for="ai-check-toggle" id="ai-check-label">
-                  <%= is_on ? '検証 ON' : '検証 OFF' %>
-                </label>
+        <div class="tab-content" id="searchTabContent">
+          <%# --- 💡 1. キーワード検索タブ (既存のフォームを配置) --- %>
+          <div class="tab-pane fade show active" id="keyword-pane" role="tabpanel" aria-labelledby="keyword-tab">
+            <div class="modal-body">
+              <div class="row g-3 align-items-end mb-4">
+                <%# --- 1. 検索タイプ --- %>
+                <div class="col-md-auto">
+                  <%= f.label :article_title_or_lead_text, "タイトルまたはリード文", class: 'form-label' %>
+                </div>
+                <div class="col-md-4">
+                  <%= select_tag 'search_type', options_for_select([
+                    ['部分一致', 'cont'],['完全一致', 'eq'],['前方一致', 'start'],['後方一致', 'end']
+                  ], params[:search_type].presence || 'cont'), class: 'form-select', id: 'search_type' %>
+                </div>
+                <%# --- 2. AI検証トグル --- %>
+                <div class="col-md-auto ms-auto">
+                  <%= f.label :use_ai_check, "AI情報検証", class: 'form-label d-block text-end' %>
+                  <% is_on = params[:use_ai_check] == '1' %>
+                  <%= hidden_field_tag :use_ai_check, (is_on ? '1' : ''), id: 'use-ai-hidden-field' %>
+                  <div class="form-check form-switch d-flex justify-content-end align-items-center mt-1">
+                    <input class="form-check-input" type="checkbox" role="switch" id="ai-check-toggle" <%= 'checked' if is_on %>>
+                    <label class="form-check-label ms-2" for="ai-check-toggle" id="ai-check-label">
+                      <%= is_on ? '検証 ON' : '検証 OFF' %>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <%# --- 3. 入力フィールドのコンテナ --- %>
+              <div id="search-input-container">
+                <%# 通常のテキストフィールド (デフォルト) %>
+                <div id="normal-search-field" style="<%= 'display: none;' if is_on %>">
+                  <%= text_field_tag "search_placeholder", @search_term,
+                      placeholder: "キーワードを入力", 
+                      class: 'form-control', 
+                      id: 'search-input-field',
+                      name: (is_on ? '' : "search_placeholder"), 
+                      data: { ransack_base: "article_title_or_lead_text" } %>
+                </div>
+                <%# AI検索用テキストエリア (AI ON時) %>
+                <div id="ai-search-textarea" style="<%= 'display: none;' unless is_on %>">
+                  <%= text_area_tag "search_placeholder", @search_term,
+                      placeholder: "詳細な質問や文章を入力してください (AI検証に最適)",
+                      class: 'form-control',
+                      id: 'search-input-textarea',
+                      rows: 5,
+                      name: (is_on ? "search_placeholder" : ''),
+                      data: { ransack_base: "article_title_or_lead_text" } %>
+                </div>
               </div>
             </div>
           </div>
-          <%# --- 3. 【新規】入力フィールドのコンテナ --- %>
-          <div id="search-input-container">
-            <%# 通常のテキストフィールド (デフォルト) %>
-            <div id="normal-search-field" style="<%= 'display: none;' if is_on %>">
-              <%= text_field_tag "search_placeholder", @search_term,
-                                placeholder: "キーワードを入力", 
-                                class: 'form-control', 
-                                id: 'search-input-field',
-                                # 💡 修正: nameはダミーのまま維持
-                                name: (is_on ? '' : "search_placeholder"), 
-                                # 💡 修正: Ransackのベース名から q[ と ] を削除し、純粋なキーのみを保持
-                                data: { ransack_base: "article_title_or_lead_text" } %>
-            </div>
-            <%# AI検索用テキストエリア (AI ON時) %>
-            <div id="ai-search-textarea" style="<%= 'display: none;' unless is_on %>">
-              <%= text_area_tag "search_placeholder", @search_term,
-                                placeholder: "詳細な質問や文章を入力してください (AI検証に最適)",
-                                class: 'form-control',
-                                id: 'search-input-textarea',
-                                rows: 5,
-                                name: (is_on ? "search_placeholder" : ''),
-                                data: { ransack_base: "article_title_or_lead_text" } %>
+          <%# --- 💡 2. タグ検索タブ (新規作成) --- %>
+          <div class="tab-pane fade" id="tag-pane" role="tabpanel" aria-labelledby="tag-tab">
+            <div class="modal-body">
+              <p class="form-label">タグ名を入力し、候補から選択してください。</p>
+              <%# タグ入力フィールドと予測表示のコンテナ %>
+              <div class="input-group mb-3">
+                <%= text_field_tag 'tag_input', '', 
+                    placeholder: "タグを入力...", 
+                    class: 'form-control', 
+                    id: 'tag-search-input',
+                    autocomplete: 'off' %>
+              </div>
+              <%# 💡 選択されたタグを保持するための隠しフィールド (Ransackのtag_in検索に使用) %>
+              <%# name属性を 'q[tag_in]' に設定し、Ransackで処理できるようにする %>
+              <%= hidden_field_tag 'q[tag_in]', 
+                  params[:q] && params[:q][:tag_in], 
+                  id: 'selected-tags-hidden', 
+                  # 初期状態では name 属性を削除しておく（JavaScriptで有効化する）
+                  name: '' %>
+              <div id="tag-suggestions" class="list-group mb-3" style="max-height: 200px; overflow-y: auto;">
+                <%# JavaScriptで予測タグが表示される場所 %>
+              </div>
+              <p class="form-label mt-4">選択中のタグ:</p>
+              <div id="selected-tags-display" class="d-flex flex-wrap gap-2">
+                <%# 選択されたタグチップ（バッジ）がここに表示される %>
+              </div>
             </div>
           </div>
         </div>
+        <%# --- フッター（クリアボタン、実行ボタン）は共通 --- %>
         <div class="modal-footer d-flex justify-content-between">
           <div>
             <%# ページ遷移を防ぎ、フォームの内容を初期状態にリセットするボタン %>
@@ -117,14 +159,13 @@
           </div>
           <div class="d-flex">
             <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">キャンセル</button>
-            <%= f.submit "検索実行", class: 'btn btn-primary' %>
+            <%= f.submit "検索実行", id: 'submit-search-button', class: 'btn btn-primary' %>
           </div>
         </div>
       <% end %>
     </div>
   </div>
 </div>
-<%# ======================================================= %>
 
 <div class="modal fade" id="externalModal" tabindex="-1" aria-labelledby="externalModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered" style="height: 90vh;">

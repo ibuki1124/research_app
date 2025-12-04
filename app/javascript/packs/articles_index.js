@@ -32,13 +32,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // 入力フィールドのコンテナと要素の定義をDOM取得可能にする
     const normalSearchField = document.getElementById('normal-search-field');
     const aiSearchTextarea = document.getElementById('ai-search-textarea');
-
     // *DOM要素は関数内で毎回取得し、最新の状態を反映させる*
     function getActiveInput() {
         const activeElement = $(`#search-input-container input:visible, #search-input-container textarea:visible`)[0];
         return activeElement;
     }
-
     function updateSearchInputName() {
         const searchInput = getActiveInput();
         if (!searchTypeSelect || !searchInput) return;
@@ -48,12 +46,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const newName = `q[${baseName}_${selectedType}]`;
         searchInput.setAttribute('name', newName);
     }
-
     // 初回ロード時の初期name属性の設定は、toggleSearchInputで実行されるため削除
     if (searchTypeSelect) {
         searchTypeSelect.addEventListener('change', updateSearchInputName); // 検索タイプ変更時
     }
-
     // ----------------------------------------------------------------------
     // 2. AI検証トグルボタンの処理
     // ----------------------------------------------------------------------
@@ -65,10 +61,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleSearchInput(isAiCheckOn) {
         const normalInput = document.getElementById('search-input-field');
         const aiTextarea = document.getElementById('search-input-textarea');
-        
         const currentActive = isAiCheckOn ? aiTextarea : normalInput;
         const currentInactive = isAiCheckOn ? normalInput : aiTextarea;
-
         // name属性を動的に設定/削除し、サーバーへの送信を制御する
         if (currentActive) {
             currentActive.parentNode.style.display = 'block'; // 表示
@@ -111,7 +105,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
     // ----------------------------------------------------------------------
     // 3. モーダル関連のJavaScript (検索モーダルの再同期処理を追加)
     // ----------------------------------------------------------------------
@@ -171,8 +164,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 4. 【新規】検索クリアボタンの処理
     // ----------------------------------------------------------------------
     const clearButton = document.getElementById('clear-search-link');
-    const searchForm = clearButton.closest('form'); // フォーム全体を取得
-
     if (clearButton && searchTypeSelect && toggleButton && hiddenField) {
         clearButton.addEventListener('click', () => {
             // 1. 検索タイプをデフォルト値に戻す (cont: 部分一致)
@@ -192,9 +183,175 @@ document.addEventListener('DOMContentLoaded', function() {
             // 4. AI検証トグルOFFの状態にUIを再同期し、name属性を適切に設定し直す
             // toggleSearchInput内で、normalInputにname属性が設定され、aiTextareaからname属性が削除される
             toggleSearchInput(false);
-            // 5. Ransackのq[...をクリアするために、フォーム内のすべてのq[...]という名前のフィールドをクリア
+            // 5. タグ関連のクリア
+            selectedTags = []; // 選択中のタグ配列をクリア
+            renderSelectedTags(); // UIと隠しフィールドを更新
+            if (tagInput) tagInput.value = ''; // 予測入力欄をクリア
+            // 6. Ransackのq[...をクリアするために、フォーム内のすべてのq[...]という名前のフィールドをクリア
             // 検索実行後にモーダルを開いたときに残っている可能性のある古いRansackクエリをクリア
             $(searchForm).find('input[name^="q["]').val('');
         });
+    }
+    // ----------------------------------------------------------------------
+    // タブ切り替え時のフォーム制御とタグ検索ロジック
+    // ----------------------------------------------------------------------
+    // const searchModal = document.getElementById('searchModal');
+    const searchForm = searchModal ? searchModal.querySelector('form') : null;
+    // タグ検索要素の取得
+    const tagInput = document.getElementById('tag-search-input');
+    const tagSuggestionsContainer = document.getElementById('tag-suggestions');
+    const selectedTagsHidden = document.getElementById('selected-tags-hidden');
+    const selectedTagsDisplay = document.getElementById('selected-tags-display');
+    // 💡 全ての検索要素の name 属性を制御する関数
+    function controlSearchParameters(isTagSearchActive) {
+        // キーワードフィールドの制御
+        const currentKeywordInput = getActiveInput(); // 現在表示されている入力フィールド
+        if (currentKeywordInput) {
+            if (isTagSearchActive) {
+                // タグ検索時はキーワードフィールドを無効化 (name属性を削除)
+                currentKeywordInput.removeAttribute('name');
+            } else {
+                // キーワード検索時はキーワードフィールドを有効化 (name属性を設定)
+                updateSearchInputName();
+            }
+        }
+        // タグ隠しフィールドの制御
+        if (selectedTagsHidden) {
+            if (isTagSearchActive) {
+                // タグ検索時はタグ隠しフィールドを有効化
+                selectedTagsHidden.setAttribute('name', 'q[tag_in]');
+            } else {
+                // キーワード検索時はタグ隠しフィールドを無効化
+                selectedTagsHidden.removeAttribute('name');
+            }
+        }
+        if (tagInput) {
+            if (isTagSearchActive) {
+                tagInput.removeAttribute('name');
+            } else {
+                // キーワード検索タブにいる場合、tag_inputはダミーのnameを設定しても良いが、
+                // 最も安全なのは name を持たせないこと。ここではremoveAttributeのまま維持。
+            }
+        }
+    }
+    // --- タブ切り替え時のイベントリスナー ---
+    const keywordTab = document.getElementById('keyword-tab');
+    const tagTab = document.getElementById('tag-tab');
+
+    if (keywordTab && tagTab) {
+        // タブが切り替わったときにパラメータの制御を実行
+        keywordTab.addEventListener('shown.bs.tab', () => controlSearchParameters(false));
+        tagTab.addEventListener('shown.bs.tab', () => controlSearchParameters(true));
+        // モーダルが初めて開かれたときにも実行（初期表示がタグ検索でない場合）
+        searchModal.addEventListener('show.bs.modal', () => {
+             // アクティブなタブの状態を確認してパラメータを初期設定
+            const isTagSearch = tagTab.classList.contains('active');
+            controlSearchParameters(isTagSearch);
+        });
+    }
+    // --- タグ検索ロジック ---
+    // ページロード時の初期値を取得
+    let selectedTags = selectedTagsHidden && selectedTagsHidden.value ? selectedTagsHidden.value.split(',').filter(t => t.trim() !== '') : [];
+    // 選択されたタグのUIを更新
+    function renderSelectedTags() {
+        if (!selectedTagsDisplay || !selectedTagsHidden) return;
+        selectedTagsDisplay.innerHTML = '';
+        // 隠しフィールドを更新 (Ransackの配列検索に対応するためカンマ区切り)
+        selectedTagsHidden.value = selectedTags.join(','); 
+        selectedTags.forEach(tag => {
+            const tagChip = document.createElement('span');
+            tagChip.className = 'badge bg-primary text-light tag-chip me-2 p-2';
+            tagChip.innerHTML = `${tag} <span class="tag-remove" style="cursor: pointer; margin-left: 5px;">&times;</span>`;
+            tagChip.dataset.tag = tag;
+            // 削除ボタンのイベント
+            tagChip.querySelector('.tag-remove').addEventListener('click', (e) => {
+                e.preventDefault();
+                // タグを配列から削除
+                selectedTags = selectedTags.filter(t => t !== tag);
+                renderSelectedTags();
+                // タグを削除したときに、検索タイプも更新されるようにする
+                controlSearchParameters(true);
+            });
+            selectedTagsDisplay.appendChild(tagChip);
+        });
+    }
+    // --- ユーティリティ: デバウンス関数 ---
+    function debounce(func, timeout = 300) {
+        let timer;
+        return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, timeout);
+        };
+    }
+
+    // 予測表示ロジック (Ajax)
+    if (tagInput) {
+        // ページロード時に選択済みのタグをレンダリング (既存)
+        renderSelectedTags();
+
+        // --- フォーカスイベント ---
+        tagInput.addEventListener('focus', function() {
+            const query = tagInput.value.trim();
+            // 入力が空の場合のみ、全タグ候補を取得 (q="")
+            if (query.length === 0) {
+                // queryを空にしてAjaxリクエストを実行
+                fetchTagsAndRender('');
+            }
+        });
+        // --- Inputイベント ---
+        tagInput.addEventListener('input', debounce(function() {
+            const query = tagInput.value.trim();
+            if (query.length < 2) {
+                tagSuggestionsContainer.innerHTML = '';
+                return;
+            }
+            fetchTagsAndRender(query);
+
+        }, 300));
+        // --- Ajax実行ロジックを関数化 ---
+        function fetchTagsAndRender(query) {
+            fetch(`/tags/suggestions?q=${encodeURIComponent(query)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(tags => { 
+                    renderSuggestions(tags); 
+                })
+                .catch(error => { 
+                    console.error('Error in tag suggestion pipeline:', error); 
+                    tagSuggestionsContainer.innerHTML = '';
+                });
+        }
+        // タグの候補をレンダリング (既存)
+        function renderSuggestions(tags) {
+             // ... (既存のrenderSuggestions関数の内容) ...
+            tagSuggestionsContainer.innerHTML = '';
+            if (tags.length === 0) {
+                tagSuggestionsContainer.innerHTML = '<div class="list-group-item text-muted">候補がありません</div>';
+                return;
+            }
+            tags.forEach(tag => {
+                // ... (タグのレンダリングロジックはそのまま) ...
+                if (selectedTags.includes(tag)) return;
+                const suggestion = document.createElement('button');
+                suggestion.className = 'list-group-item list-group-item-action';
+                suggestion.textContent = tag;
+                suggestion.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (!selectedTags.includes(tag)) {
+                        selectedTags.push(tag);
+                        renderSelectedTags();
+                        tagInput.value = '';
+                        tagSuggestionsContainer.innerHTML = '';
+                    }
+                });
+                tagSuggestionsContainer.appendChild(suggestion);
+            });
+        }
+        // ページロード時に選択済みのタグをレンダリング
+        renderSelectedTags();
     }
 });

@@ -82,3 +82,21 @@
   }
 }
 
+#tag-suggestions {
+  /* リストアイテムの高さに基づいて、約4行分（例: 2rem * 4 = 8rem + padding/border）に設定 */
+  max-height: 10rem; /* 約160px。必要に応じて調整してください */
+  overflow-y: auto; /* 高さを超えたらスクロールバーを表示 */
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+}
+
+/* 候補リストの背景を白くし、モーダル内で見やすくする */
+#tag-suggestions .list-group-item {
+  background-color: #fff;
+  /* ボタンにしたため、カーソルをポインターにする */
+  cursor: pointer;
+}
+
+#tag-suggestions .list-group-item:hover {
+  background-color: #EEE;
+}
