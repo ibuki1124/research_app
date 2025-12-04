@@ -114,7 +114,7 @@
                 <%# AI検索用テキストエリア (AI ON時) %>
                 <div id="ai-search-textarea" style="<%= 'display: none;' unless is_on %>">
                   <%= text_area_tag "search_placeholder", @search_term,
-                      placeholder: "詳細な質問や文章を入力してください (AI検証に最適)",
+                      placeholder: "フェイクニュースの可能性を検証したい内容を記載してください。\nより詳細な情報を提供するほど、AIの検証精度が向上します。\n（例：記事のタイトル、記事の要約、疑わしい点など）",
                       class: 'form-control',
                       id: 'search-input-textarea',
                       rows: 5,
