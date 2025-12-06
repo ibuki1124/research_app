@@ -2,16 +2,28 @@
 
 <% 
   verdict = judgment_data['verdict']
+  credibility_score = judgment_data['credibility_score'].to_i
   
+  # 1. 判定結果に基づいた色とテキストの設定
   if verdict == 'misinformation'
-    color_code = '#c00'; display_text = '誤報'
+    color_code = '#c00'; display_text = '偽・誤情報の可能性が高い'
     bg_color = '#fdd'
   elsif verdict == 'unverified'
-    color_code = '#fa0'; display_text = '情報不足（審議中）' # 審議中の場合は黄色/オレンジ
+    color_code = '#fa0'; display_text = '真偽不明'
     bg_color = '#ffe'
-  else # 'true' またはその他
-    color_code = '#0a0'; display_text = '真実'
+  else # 'true'
+    color_code = '#0a0'; display_text = '真実の可能性が高い'
     bg_color = '#dfd'
+  end
+
+  # 2. Credibility Score (1-5) の説明テキストの設定
+  score_explanation = case credibility_score
+    when 5 then "非常に高い：情報源が一貫して真実性を強く支持しています"
+    when 4 then "高い：情報源の大部分が真実性を支持しています"
+    when 3 then "真偽不明：情報が矛盾、または情報量が不足しています"
+    when 2 then "低い：信頼できる情報源から偽・誤情報であるとの指摘あり"
+    when 1 then "非常に低い：情報源が一貫して偽・誤情報であることを強く指摘"
+    else "---"
   end
 %>
 
@@ -19,12 +31,23 @@
   
   <h3>🚨 AIによる情報検証結果: <%= display_text %> 🚨</h3> 
   
-  <p><strong>誤報可能性スコア:</strong> <%= judgment_data['misinformation_score'] %>%</p> 
-  <p><strong>判定根拠:</strong> <%= judgment_data['reason'] %></p>
+  <p>
+    <strong>信憑性スコア:</strong>
+    <br>
+    <span style="font-size: 1.2em; color: <%= color_code %>;">
+      <%= credibility_score %>/5
+    </span>
+    (<%= score_explanation %>)
+  </p>
+  <p>
+    <strong>判定根拠:</strong>
+    <br>
+    <%= judgment_data['reason'] %>
+  </p>
 </div>
 
 <div style="border: 1px solid #ccc; padding: 15px; margin-top: 10px; background-color: #f9f9f9;">
-  <h4>参照された外部ソース</h4>
+  <h4>参照された外部情報</h4>
   <% if external_articles.present? %>
     <ul>
       <% external_articles.each do |article| %>
@@ -36,6 +59,6 @@
       <% end %>
     </ul>
   <% else %>
-    <p>参照された外部ソースは見つかりませんでした。</p>
+    <p>参照された外部情報は見つかりませんでした。</p>
   <% end %>
 </div>
