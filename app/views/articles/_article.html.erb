@@ -5,9 +5,22 @@
       data-bs-target="#externalModal" 
       data-detail-url="<%= article.detail_page_url %>"
       data-article-title="<%= article.article_title %>"
-      class="article-link"
+      class="article-link text-decoration-none fw-bold text-dark"
     >
       <%= article.article_title %>
+      <div class="mt-1 d-flex flex-wrap gap-1">
+        <% if article.tag.present? %>
+          <% tags_array = article.tag.split(',').map(&:strip).reject(&:empty?) %>
+          <% tags_array.each do |tag_name| %>
+            <span class="badge rounded-pill text-bg-secondary p-2">
+              <%= tag_name %>
+            </span>
+          <% end %>
+        <% else %>
+          <%# タグがない場合の表示 (オプション) %>
+          <span class="text-muted small">タグなし</span>
+        <% end %>
+      </div>
     </a>
   </td>
 </tr>
