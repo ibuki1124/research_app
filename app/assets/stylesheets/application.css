@@ -111,3 +111,12 @@
 .toggle-icon-wrapper[aria-expanded="true"] .toggle-icon {
   transform: rotate(90deg);
 }
+
+/* Placeholder text style adjustment for textareas */
+#search-input-textarea::placeholder,
+#search-input-textarea::-webkit-input-placeholder,
+#search-input-textarea:-moz-placeholder,
+#search-input-textarea::-moz-placeholder,
+#search-input-textarea:-ms-input-placeholder {
+  opacity: 0.7;
+}

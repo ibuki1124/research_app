@@ -28,10 +28,11 @@ document.addEventListener('turbolinks:load', function() {
     // 1. Ransack検索タイプの切り替え処理
     // ----------------------------------------------------------------------
     const searchTypeSelect = document.getElementById('search_type');
-    const NAME_ATTR_PATTERN = 'q\\[article_title_or_lead_text';
     // 入力フィールドのコンテナと要素の定義をDOM取得可能にする
     const normalSearchField = document.getElementById('normal-search-field');
     const aiSearchTextarea = document.getElementById('ai-search-textarea');
+
+    const searchTypeContainer = document.getElementById('search-type-container');
     // *DOM要素は関数内で毎回取得し、最新の状態を反映させる*
     function getActiveInput() {
         const activeElement = $(`#search-input-container input:visible, #search-input-container textarea:visible`)[0];
@@ -63,11 +64,23 @@ document.addEventListener('turbolinks:load', function() {
         const aiTextarea = document.getElementById('search-input-textarea');
         const currentActive = isAiCheckOn ? aiTextarea : normalInput;
         const currentInactive = isAiCheckOn ? normalInput : aiTextarea;
+
+        if (searchTypeContainer && searchTypeSelect) {
+            if (isAiCheckOn) {
+                // AI検証 ON の場合: セレクトボックスを非表示にし、値を 'cont' に強制設定
+                searchTypeContainer.classList.add('d-none');
+                searchTypeSelect.value = 'cont'; // 部分一致に固定
+            } else {
+                // AI検証 OFF の場合: セレクトボックスを表示
+                searchTypeContainer.classList.remove('d-none');
+            }
+        }
+
         // name属性を動的に設定/削除し、サーバーへの送信を制御する
         if (currentActive) {
             currentActive.parentNode.style.display = 'block'; // 表示
             const baseName = currentActive.dataset.ransackBase;
-            const selectedType = searchTypeSelect.value;
+            const selectedType = isAiCheckOn ? 'cont' : searchTypeSelect.value;
             const newName = `q[${baseName}_${selectedType}]`;
             currentActive.setAttribute('name', newName);
         }
@@ -75,7 +88,7 @@ document.addEventListener('turbolinks:load', function() {
             currentInactive.removeAttribute('name');
             currentInactive.parentNode.style.display = 'none'; // 非表示
         }
-        aiCheckLabel.textContent = isAiCheckOn ? '検証 ON' : '検証 OFF';
+        aiCheckLabel.textContent = isAiCheckOn ? 'ON' : 'OFF';
         console.log("Toggle AI Check:", isAiCheckOn ? 'ON' : 'OFF');
     }
     // トグルボタンの変更イベント

@@ -59,17 +59,17 @@
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title" id="searchModalLabel">記事の検索・絞り込み</h5>
+        <h5 class="modal-title" id="searchModalLabel">記事の検索・絞り込み / 情報の検証</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <%# --- 💡 修正: タブナビゲーションを追加 --- %>
       <ul class="nav nav-tabs" id="searchTab" role="tablist">
         <li class="nav-item flex-fill" role="presentation">
           <%# activeクラスは、現在の検索パラメータ（params[:q][:tag_in]）に応じて動的に設定することも可能ですが、ここではデフォルトをキーワードにします %>
-          <button class="nav-link w-100 active" id="keyword-tab" data-bs-toggle="tab" data-bs-target="#keyword-pane" type="button" role="tab" aria-controls="keyword-pane" aria-selected="true">キーワード検索</button>
+          <button class="nav-link w-100 active" id="keyword-tab" data-bs-toggle="tab" data-bs-target="#keyword-pane" type="button" role="tab" aria-controls="keyword-pane" aria-selected="true">検索</button>
         </li>
         <li class="nav-item flex-fill" role="presentation">
-          <button class="nav-link w-100" id="tag-tab" data-bs-toggle="tab" data-bs-target="#tag-pane" type="button" role="tab" aria-controls="tag-pane" aria-selected="false">タグ検索</button>
+          <button class="nav-link w-100" id="tag-tab" data-bs-toggle="tab" data-bs-target="#tag-pane" type="button" role="tab" aria-controls="tag-pane" aria-selected="false">タグ絞り込み</button>
         </li>
       </ul>
       <%= search_form_for @q, url: articles_path, method: :get do |f| %>
@@ -77,27 +77,22 @@
           <%# --- 💡 1. キーワード検索タブ (既存のフォームを配置) --- %>
           <div class="tab-pane fade show active" id="keyword-pane" role="tabpanel" aria-labelledby="keyword-tab">
             <div class="modal-body">
-              <div class="row g-3 align-items-end mb-4">
-                <%# --- 1. 検索タイプ --- %>
-                <div class="col-md-auto">
-                  <%= f.label :article_title_or_lead_text, "タイトルまたはリード文", class: 'form-label' %>
+              <div class="row g-3 align-items-center mb-4">
+                <%# --- 2. AI検証トグル --- %>
+                <% is_on = params[:use_ai_check] == '1' %>
+                <div class="col-md-auto me-auto d-flex">
+                  <%= f.label :use_ai_check, "AI情報検証", class: 'form-label d-block text-end mb-0 me-1' %>
+                  <%= hidden_field_tag :use_ai_check, (is_on ? '1' : ''), id: 'use-ai-hidden-field' %>
+                  <div class="form-check form-switch m-0">
+                    <input class="form-check-input" type="checkbox" role="switch" id="ai-check-toggle" <%= 'checked' if is_on %>>
+                    <label class="form-check-label" for="ai-check-toggle" id="ai-check-label"></label>
+                  </div>
                 </div>
-                <div class="col-md-4">
+                <%# --- 1. 検索タイプ --- %>
+                <div class="col-md-4 <%= 'd-none' if is_on %>" id="search-type-container">
                   <%= select_tag 'search_type', options_for_select([
                     ['部分一致', 'cont'],['完全一致', 'eq'],['前方一致', 'start'],['後方一致', 'end']
                   ], params[:search_type].presence || 'cont'), class: 'form-select', id: 'search_type' %>
-                </div>
-                <%# --- 2. AI検証トグル --- %>
-                <div class="col-md-auto ms-auto">
-                  <%= f.label :use_ai_check, "AI情報検証", class: 'form-label d-block text-end' %>
-                  <% is_on = params[:use_ai_check] == '1' %>
-                  <%= hidden_field_tag :use_ai_check, (is_on ? '1' : ''), id: 'use-ai-hidden-field' %>
-                  <div class="form-check form-switch d-flex justify-content-end align-items-center mt-1">
-                    <input class="form-check-input" type="checkbox" role="switch" id="ai-check-toggle" <%= 'checked' if is_on %>>
-                    <label class="form-check-label ms-2" for="ai-check-toggle" id="ai-check-label">
-                      <%= is_on ? '検証 ON' : '検証 OFF' %>
-                    </label>
-                  </div>
                 </div>
               </div>
               <%# --- 3. 入力フィールドのコンテナ --- %>
@@ -117,7 +112,7 @@
                       placeholder: "フェイクニュースの可能性を検証したい内容を記載してください。\nより詳細な情報を提供するほど、AIの検証精度が向上します。\n（例：記事のタイトル、記事の要約、疑わしい点など）",
                       class: 'form-control',
                       id: 'search-input-textarea',
-                      rows: 5,
+                      rows: 10,
                       name: (is_on ? "search_placeholder" : ''),
                       data: { ransack_base: "article_title_or_lead_text" } %>
                 </div>
@@ -161,7 +156,7 @@
           </div>
           <div class="d-flex">
             <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">キャンセル</button>
-            <%= f.submit "検索実行", id: 'submit-search-button', class: 'btn btn-primary' %>
+            <%= f.submit "検索", id: 'submit-search-button', class: 'btn btn-primary' %>
           </div>
         </div>
       <% end %>
