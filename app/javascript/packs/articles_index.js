@@ -22,6 +22,17 @@ function checkScroll() {
     }
 }
 
+function cleanUpModalBackdrops() {
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => {
+        backdrop.remove();
+    });
+    // bodyに残った不要なクラスも削除
+    document.body.classList.remove('modal-open');
+    document.body.classList.remove('modal-open-fix'); // 以前追加した可能性のあるカスタムfixクラスも削除
+    document.body.style.overflow = '';
+}
+
 document.addEventListener('turbolinks:load', function() {
     $loadingSpinner = $('#loading-spinner');
     // ----------------------------------------------------------------------
@@ -142,6 +153,7 @@ document.addEventListener('turbolinks:load', function() {
     if (searchModal && toggleButton) {
         // 検索モーダルが表示される直前のイベントを捕捉
         searchModal.addEventListener('show.bs.modal', function() {
+            cleanUpModalBackdrops();
             // 現在のチェック状態に合わせてUIを強制的に再同期する
             const isCurrentAiCheckOn = toggleButton.checked;
             toggleSearchInput(isCurrentAiCheckOn); // name属性と表示を再設定
@@ -155,6 +167,7 @@ document.addEventListener('turbolinks:load', function() {
     // 外部モーダル関連（既存コード）
     if (externalModal) {
         externalModal.addEventListener('show.bs.modal', function (event) {
+            cleanUpModalBackdrops();
             toggleBodyScrollFix(true);
             const button = event.relatedTarget;
             if (!button) {
