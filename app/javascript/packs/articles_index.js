@@ -127,17 +127,35 @@ document.addEventListener('turbolinks:load', function() {
     const openInNewTabLink = document.getElementById('openInNewTab');
     // 検索モーダル
     const searchModal = document.getElementById('searchModal');
+
+    function toggleBodyScrollFix(isModalOpen) {
+        // 既存のBootstrapの .modal-open クラスを上書きし、
+        // iOS/Safariで必要となる position: fixed; を適用するクラスを操作する
+        const fixClass = 'modal-open-fix'; 
+        if (isModalOpen) {
+            document.body.classList.add(fixClass);
+        } else {
+            document.body.classList.remove(fixClass);
+        }
+    }
+
     if (searchModal && toggleButton) {
         // 検索モーダルが表示される直前のイベントを捕捉
         searchModal.addEventListener('show.bs.modal', function() {
             // 現在のチェック状態に合わせてUIを強制的に再同期する
             const isCurrentAiCheckOn = toggleButton.checked;
             toggleSearchInput(isCurrentAiCheckOn); // name属性と表示を再設定
+            toggleBodyScrollFix(true);
+        });
+
+        searchModal.addEventListener('hidden.bs.modal', function () {
+            toggleBodyScrollFix(false);
         });
     }
     // 外部モーダル関連（既存コード）
     if (externalModal) {
         externalModal.addEventListener('show.bs.modal', function (event) {
+            toggleBodyScrollFix(true);
             const button = event.relatedTarget;
             if (!button) {
                 console.error("Clicked element (relatedTarget) not found.");
@@ -156,6 +174,7 @@ document.addEventListener('turbolinks:load', function() {
             modalTitleElement.textContent = title || '参考記事';
         });
         externalModal.addEventListener('hidden.bs.modal', function () {
+            toggleBodyScrollFix(false);
             iframeElement.src = '';
             modalTitleElement.textContent = '参考記事';
         });
