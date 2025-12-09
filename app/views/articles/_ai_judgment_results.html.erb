@@ -37,6 +37,7 @@
     <span style="font-size: 1.2em; color: <%= color_code %>;">
       <%= credibility_score %>/5
     </span>
+    <br>
     (<%= score_explanation %>)
   </p>
   <p>
@@ -46,15 +47,37 @@
   </p>
 </div>
 
-<div style="border: 1px solid #ccc; padding: 15px; margin-top: 10px; background-color: #f9f9f9;">
+<div class="border p-3 mt-3 bg-light">
   <h4>参照された外部情報</h4>
   <% if external_articles.present? %>
-    <ul>
-      <% external_articles.each do |article| %>
-        <li>
-          <a href="<%= article['url'] %>" target="_blank">
-            <b><%= article['title'] %></b>
-          </a>
+    <ul class="list-unstyled accordion" id="external-articles-list">
+      <% external_articles.each_with_index do |article, index| %>
+        <% unique_id = "collapse-search-#{index}" %>
+        <li class="mb-3 pb-2 border-bottom" style="border-bottom-style: dashed !important;">
+          <%# 💡 元の記事タイトル %>
+          <% if article['url'].present? %>
+            <a href="<%= article['url'] %>" target="_blank">
+              <b><%= article['title'] %></b> (元の記事へ)
+            </a>
+          <% else %>
+            <b><%= article['title'] %></b> (リンクなし)
+          <% end %>
+          <%# 💡 Google検索リンク %>
+          <% if article['search_url'].present? %>
+            <div class="mt-2">
+              <span class="toggle-icon-wrapper" data-bs-toggle="collapse" data-bs-target="#<%= unique_id %>" aria-expanded="false" aria-controls="<%= unique_id %>" style="cursor: pointer; font-size: 0.9em;">
+                <i class="fa-solid fa-chevron-right toggle-icon me-1"></i>
+                リンクが開けない場合はこちら
+              </span>
+            </div>
+            <div class="collapse mt-2" id="<%= unique_id %>" data-bs-parent="#external-articles-list">
+              <span class="d-inline-block p-2 border rounded" style="background-color: #e6f0ff; border-color: #c0d8ff;">
+                <a href="<%= article['search_url'] %>" target="_blank" style="color: #004085; font-size: 0.95em; text-decoration: none;">
+                  <i class="fa-solid fa-magnifying-glass fa-lg"></i> Google検索で確認
+                </a>
+              </span>
+            </div>
+          <% end %>
         </li>
       <% end %>
     </ul>

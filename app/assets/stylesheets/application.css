@@ -100,3 +100,14 @@
 #tag-suggestions .list-group-item:hover {
   background-color: #EEE;
 }
+
+/* 折りたたみアイコンの回転アニメーション */
+.toggle-icon {
+  transition: transform 0.3s ease; /* スムーズなアニメーション */
+  display: inline-block;
+}
+
+.collapse.show + * .toggle-icon-wrapper .toggle-icon,
+.toggle-icon-wrapper[aria-expanded="true"] .toggle-icon {
+  transform: rotate(90deg);
+}
