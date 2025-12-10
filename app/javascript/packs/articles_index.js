@@ -27,7 +27,6 @@ function checkScroll() {
             if ($loadingSpinner) {
                 $loadingSpinner.show();
             }
-            // setTimeoutの無名関数を名前付き関数に変更
             setTimeout(handleDelayedClick, 2000, nextLink);
         }
     }
@@ -44,18 +43,9 @@ function cleanUpModalBackdrops() {
     backdrops.forEach(backdrop => {
         backdrop.remove();
     });
-    document.body.classList.remove('modal-open');
-    document.body.classList.remove('modal-open-fix');
-    document.body.style.overflow = '';
+    // 💡 削除: bodyからクラスとスタイルを削除するロジックはBootstrapに任せる
 }
-function toggleBodyScrollFix(isModalOpen) {
-    const fixClass = 'modal-open-fix';
-    if (isModalOpen) {
-        document.body.classList.add(fixClass);
-    } else {
-        document.body.classList.remove(fixClass);
-    }
-}
+
 function getActiveInput() {
     const activeElement = $(`#search-input-container input:visible, #search-input-container textarea:visible`)[0];
     return activeElement;
@@ -104,14 +94,12 @@ function toggleSearchInput(isAiCheckOn) {
 }
 
 function handleAiCheckChange() {
-    // 🚨 トグルボタンの'change'イベント内の無名関数を名前付き化
     const hiddenField = document.getElementById('use-ai-hidden-field');
     const normalInput = document.getElementById('search-input-field');
     const aiTextarea = document.getElementById('search-input-textarea');
     const isChecked = toggleButton.checked;
     hiddenField.value = isChecked ? '1' : '';
     toggleSearchInput(isChecked);
-    // 検索フィールド間で値を引き継ぐ
     if (isChecked) {
         aiTextarea.value = normalInput.value;
     } else {
@@ -122,26 +110,17 @@ function handleAiCheckChange() {
 // --- D. モーダルイベントハンドラ (名前付き関数) ---
 
 function onSearchModalShow() {
-    // 🚨 searchModalの'show.bs.modal'イベント内の無名関数を名前付き化
     cleanUpModalBackdrops();
     const isCurrentAiCheckOn = toggleButton.checked;
     toggleSearchInput(isCurrentAiCheckOn);
-    toggleBodyScrollFix(true);
-    // タブの状態チェックを組み込み (controlSearchParametersの呼び出し)
     if (tagTab) {
         const isTagSearch = tagTab.classList.contains('active');
         controlSearchParameters(isTagSearch);
     }
 }
-function onSearchModalHidden() {
-    // 🚨 searchModalの'hidden.bs.modal'イベント内の無名関数を名前付き化
-    toggleBodyScrollFix(false);
-}
 
 function onExternalModalShow(event) {
-    // 🚨 externalModalの'show.bs.modal'イベント内の無名関数を名前付き化
     cleanUpModalBackdrops();
-    toggleBodyScrollFix(true);
     const iframeElement = document.getElementById('embeddedIframe');
     const modalTitleElement = document.getElementById('externalModalLabel');
     const openInNewTabLink = document.getElementById('openInNewTab');
@@ -163,8 +142,6 @@ function onExternalModalShow(event) {
     if (modalTitleElement) modalTitleElement.textContent = title || '参考記事';
 }
 function onExternalModalHidden() {
-    // 🚨 externalModalの'hidden.bs.modal'イベント内の無名関数を名前付き化
-    toggleBodyScrollFix(false);
     const iframeElement = document.getElementById('embeddedIframe');
     const modalTitleElement = document.getElementById('externalModalLabel');
     if (iframeElement) iframeElement.src = '';
@@ -174,15 +151,12 @@ function onExternalModalHidden() {
 // --- E. タグ/タブ/クリア関連イベントハンドラ ---
 
 function onKeywordTabShown() {
-    // 🚨 タブの'shown.bs.tab'イベント内の無名関数を名前付き化
     controlSearchParameters(false);
 }
 function onTagTabShown() {
-    // 🚨 タブの'shown.bs.tab'イベント内の無名関数を名前付き化
     controlSearchParameters(true);
 }
 function handleTagRemoveClick(e) {
-    // 🚨 タグ削除イベント内の無名関数を名前付き化
     e.preventDefault();
     const tag = e.currentTarget.parentNode.dataset.tag;
     selectedTags = selectedTags.filter(t => t !== tag);
@@ -190,7 +164,6 @@ function handleTagRemoveClick(e) {
     controlSearchParameters(true);
 }
 function handleClearSearchClick() {
-    // 🚨 クリアボタンの'click'イベント内の無名関数を名前付き化
     const hiddenField = document.getElementById('use-ai-hidden-field');
     const normalInput = document.getElementById('search-input-field');
     const aiTextarea = document.getElementById('search-input-textarea');
@@ -206,14 +179,12 @@ function handleClearSearchClick() {
     if (searchForm) $(searchForm).find('input[name^="q["]').val('');
 }
 function handleTagInputFocus() {
-    // 🚨 tagInputの'focus'イベント内の無名関数を名前付き化
     const query = tagInput.value.trim();
     if (query.length === 0) {
         fetchTagsAndRender('');
     }
 }
 function handleTagInputDebounced(func) {
-    // 🚨 debounceでラップされた無名関数を名前付き化
     const tagSuggestionsContainer = document.getElementById('tag-suggestions');
     const query = tagInput.value.trim();
     if (query.length < 2) {
@@ -223,7 +194,6 @@ function handleTagInputDebounced(func) {
     fetchTagsAndRender(query);
 }
 function handleSuggestionClick(e) {
-    // 🚨 タグ候補の'click'イベント内の無名関数を名前付き化
     e.preventDefault();
     const tag = e.currentTarget.textContent;
     const tagSuggestionsContainer = document.getElementById('tag-suggestions');
@@ -239,18 +209,15 @@ function handleSuggestionClick(e) {
 // --- F. AJAX/FETCH関連ハンドラ ---
 
 function handleFetchSuccess(response) {
-    // 🚨 fetchの.then(response => ...)内の無名関数を名前付き化
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
     return response.json();
 }
 function handleFetchRender(tags) {
-    // 🚨 fetchの.then(tags => ...)内の無名関数を名前付き化
     renderSuggestions(tags);
 }
 function handleFetchError(error) {
-    // 🚨 fetchの.catch(error => ...)内の無名関数を名前付き化
     const tagSuggestionsContainer = document.getElementById('tag-suggestions');
     console.error('Error in tag suggestion pipeline:', error); 
     if(tagSuggestionsContainer) tagSuggestionsContainer.innerHTML = '';
@@ -273,7 +240,6 @@ function debounce(func, timeout = 300) {
 }
 function handleAjaxComplete() {
     isFetchingArticles = false;
-    // 🚨 $(document).on('ajax:complete') の無名関数を名前付き化
     if ($loadingSpinner) {
         $loadingSpinner.hide();
     }
@@ -296,7 +262,6 @@ function removeEventListeners() {
     }
     if (searchModal) {
         searchModal.removeEventListener('show.bs.modal', onSearchModalShow);
-        searchModal.removeEventListener('hidden.bs.modal', onSearchModalHidden);
     }
     if (externalModal) {
         externalModal.removeEventListener('show.bs.modal', onExternalModalShow);
@@ -361,7 +326,6 @@ function controlSearchParameters(isTagSearchActive) {
     }
 }
 function renderSelectedTags() {
-    // 💡 selectedTagsDisplay, selectedTagsHidden は turbolinks:load で設定されることを前提
     const selectedTagsDisplay = document.getElementById('selected-tags-display');
     const selectedTagsHidden = document.getElementById('selected-tags-hidden');
     if (!selectedTagsDisplay || !selectedTagsHidden) return;
@@ -419,7 +383,6 @@ document.addEventListener('turbolinks:load', function() {
     // モーダルイベント
     if (searchModal) {
         searchModal.addEventListener('show.bs.modal', onSearchModalShow);
-        searchModal.addEventListener('hidden.bs.modal', onSearchModalHidden);
     }
     if (externalModal) {
         externalModal.addEventListener('show.bs.modal', onExternalModalShow);

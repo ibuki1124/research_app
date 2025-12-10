@@ -53,6 +53,11 @@
   opacity: 0.7;
 }
 
-.modal-open-fix {
-  overflow: hidden !important;
+.form-height{
+  height: calc(100% - 105px);
+}
+
+#search-input-textarea{
+  resize: none;
+  height: calc(100vh - 330px);
 }

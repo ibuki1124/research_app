@@ -43,7 +43,7 @@
 <%# 【新規】検索モーダルの定義 =============================== %>
 <%# ======================================================= %>
 <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-dialog modal-fullscreen d-flex">
     <div class="modal-content">
       <div class="modal-header bg-primary text-white">
         <h5 class="modal-title" id="searchModalLabel">記事の検索・絞り込み / 情報の検証</h5>
@@ -59,7 +59,7 @@
           <button class="nav-link w-100" id="tag-tab" data-bs-toggle="tab" data-bs-target="#tag-pane" type="button" role="tab" aria-controls="tag-pane" aria-selected="false">タグ絞り込み</button>
         </li>
       </ul>
-      <%= search_form_for @q, url: articles_path, method: :get do |f| %>
+      <%= search_form_for @q, url: articles_path, method: :get, class:"d-flex flex-column form-height" do |f| %>
         <div class="tab-content" id="searchTabContent">
           <%# --- 💡 1. キーワード検索タブ (既存のフォームを配置) --- %>
           <div class="tab-pane fade show active" id="keyword-pane" role="tabpanel" aria-labelledby="keyword-tab">
@@ -99,7 +99,7 @@
                       placeholder: "フェイクニュースの可能性を検証したい内容を記載してください。\nより詳細な情報を提供するほど、AIの検証精度が向上します。\n（例：記事のタイトル、記事の要約、疑わしい点など）",
                       class: 'form-control',
                       id: 'search-input-textarea',
-                      rows: 10,
+                      rows: 5,
                       name: (is_on ? "search_placeholder" : ''),
                       data: { ransack_base: "article_title_or_lead_text" } %>
                 </div>
@@ -136,7 +136,7 @@
           </div>
         </div>
         <%# --- フッター（クリアボタン、実行ボタン）は共通 --- %>
-        <div class="modal-footer d-flex justify-content-between">
+        <div class="modal-footer d-flex justify-content-between mt-auto">
           <div>
             <%# ページ遷移を防ぎ、フォームの内容を初期状態にリセットするボタン %>
             <button type="button" id="clear-search-link" class="btn btn-outline-secondary">クリア</button>
