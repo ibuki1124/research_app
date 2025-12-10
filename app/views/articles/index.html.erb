@@ -46,10 +46,6 @@
   <div id="pagination-links" style="display: none;">
     <%= paginate @articles, remote: true %>
   </div>
-
-  <%# Action Cableチャンネル接続用のJavaScriptタグを追記 %>
-  <%= javascript_pack_tag 'ai_search_channel' %>
-  <%= javascript_pack_tag 'articles_index' %>
 </div>
 
 <%# ======================================================= %>
