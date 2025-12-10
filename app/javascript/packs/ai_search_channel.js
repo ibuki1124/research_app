@@ -2,37 +2,60 @@
 
 import consumer from "../channels/consumer"
 
-// Viewに設定した data-identifier 属性から識別子を取得
-const container = document.getElementById('ai-search-results');
-const identifier = container ? container.dataset.identifier : null;
+let container = null;
+let identifier = null;
+let subscription = null;
 
 function normalizeTerm(term) {
   if (!term) return '';
-  // 改行コード(\r, \n)とすべての空白文字(\s)を空文字に置換し、前後の空白を除去
   return term.replace(/[\r\n\s]/g, '').trim();
 }
 
-if (identifier) {
-  consumer.subscriptions.create({ channel: "AiSearchChannel", identifier: identifier }, {
-    connected() {
-      console.log("Connected to AI Search Channel.");
-    },
+function subscribeToChannel() {
+  // 既に購読済みであれば何もしない
+  if (subscription) return;
+  container = document.getElementById('ai-search-results');
+  identifier = container ? container.dataset.identifier : null;
+  if (identifier) {
+    subscription = consumer.subscriptions.create({ channel: "AiSearchChannel", identifier: identifier }, {
+      connected() {
+        console.log("Connected to AI Search Channel.");
+      },
 
-    disconnected() {
-      console.log("Disconnected from AI Search Channel.");
-    },
+      disconnected() {
+        console.log("Disconnected from AI Search Channel.");
+      },
 
-    // チャンネルからデータが届いた時の処理
-    received(data) {
-      const searchDataElement = document.getElementById('current-search-data');
-      // 現在表示されているページの検索キーワードを取得
-      const activeSearchTerm = searchDataElement ? searchDataElement.dataset.term : null;
-      // Action Cableメッセージに含まれる検索キーワードを取得
-      const receivedSearchTerm = data.search_term;
-      const isMatch = (container && normalizeTerm(activeSearchTerm) === normalizeTerm(receivedSearchTerm));
-      if (isMatch) {
-        container.innerHTML = data.html;
+      // チャンネルからデータが届いた時の処理
+      received(data) {
+        const searchDataElement = document.getElementById('current-search-data');
+        if (!container) {
+          console.error("Action Cable: Target container not found in DOM.");
+          return;
+        }
+        const activeSearchTerm = searchDataElement ? searchDataElement.dataset.term : null;
+        const receivedSearchTerm = data.search_term;
+        const isMatch = (normalizeTerm(activeSearchTerm) === normalizeTerm(receivedSearchTerm));
+        if (isMatch) {
+          container.innerHTML = data.html;
+          const loadingMessage = container.querySelector('.ai-loading-message');
+          if (loadingMessage) {
+            loadingMessage.remove();
+          }
+        }
       }
-    }
-  });
+    });
+  }
 }
+
+// 💡 修正5: DOMが構築され、Turbolinksが読み込まれた後に購読を開始
+document.addEventListener('turbolinks:load', subscribeToChannel);
+
+
+document.addEventListener('turbolinks:before-cache', function() {
+  if (subscription) {
+    subscription.unsubscribe();
+    subscription = null;
+    console.log("Unsubscribed from AI Search Channel.");
+  }
+});
