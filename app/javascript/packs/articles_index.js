@@ -1,402 +1,454 @@
 import $ from 'jquery';
 window.$ = $;
 
+// --- ファイルスコープ変数 ---
 let $loadingSpinner = null;
+let selectedTags = [];
+let searchTypeSelect = null;
+let toggleButton = null;
+let searchModal = null;
+let externalModal = null;
+let tagInput = null;
+let selectedTagsHidden = null;
+let selectedTagsDisplay = null;
+let searchForm = null;
+let keywordTab = null;
+let tagTab = null;
+let isFetchingArticles = false;
+
+// --- A. 無限スクロール関連 ---
 
 function checkScroll() {
+    if (isFetchingArticles) return;
     if ($(window).scrollTop() >= $(document).height() - $(window).height() - 200) {
-        // 1. 次のページへのリンクを取得
         const nextLink = $('#pagination-links a[rel="next"]');
         if (nextLink.length) {
-            $(window).off('scroll');
-            // 2. 💡 ローディングアイコンを表示
+            isFetchingArticles = true;
             if ($loadingSpinner) {
                 $loadingSpinner.show();
             }
-            // 3. 💡 2秒間の遅延を設定
-            setTimeout(function() {
-                // 4. 遅延後、AJAXリクエストをトリガー
-                nextLink[0].click();
-            }, 2000);
+            // setTimeoutの無名関数を名前付き関数に変更
+            setTimeout(handleDelayedClick, 2000, nextLink);
         }
     }
 }
+function handleDelayedClick(nextLink) {
+    // nextLinkはjQueryオブジェクトなので[0]でDOM要素を取得
+    nextLink[0].click();
+}
+
+// --- B. モーダル・UIヘルパー関数 ---
 
 function cleanUpModalBackdrops() {
     const backdrops = document.querySelectorAll('.modal-backdrop');
     backdrops.forEach(backdrop => {
         backdrop.remove();
     });
-    // bodyに残った不要なクラスも削除
     document.body.classList.remove('modal-open');
-    document.body.classList.remove('modal-open-fix'); // 以前追加した可能性のあるカスタムfixクラスも削除
+    document.body.classList.remove('modal-open-fix');
     document.body.style.overflow = '';
 }
+function toggleBodyScrollFix(isModalOpen) {
+    const fixClass = 'modal-open-fix';
+    if (isModalOpen) {
+        document.body.classList.add(fixClass);
+    } else {
+        document.body.classList.remove(fixClass);
+    }
+}
+function getActiveInput() {
+    const activeElement = $(`#search-input-container input:visible, #search-input-container textarea:visible`)[0];
+    return activeElement;
+}
+function updateSearchInputName() {
+    const searchInput = getActiveInput();
+    if (!searchTypeSelect || !searchInput) return;
+    const baseName = searchInput.dataset.ransackBase;
+    const selectedType = searchTypeSelect.value;
+    const newName = `q[${baseName}_${selectedType}]`;
+    searchInput.setAttribute('name', newName);
+}
 
-document.addEventListener('turbolinks:load', function() {
-    $loadingSpinner = $('#loading-spinner');
-    // ----------------------------------------------------------------------
-    // 1. Ransack検索タイプの切り替え処理
-    // ----------------------------------------------------------------------
-    const searchTypeSelect = document.getElementById('search_type');
-    // 入力フィールドのコンテナと要素の定義をDOM取得可能にする
-    const normalSearchField = document.getElementById('normal-search-field');
-    const aiSearchTextarea = document.getElementById('ai-search-textarea');
+// --- C. AI検証/トグル関連関数 ---
 
+function toggleSearchInput(isAiCheckOn) {
+    const normalInput = document.getElementById('search-input-field');
+    const aiTextarea = document.getElementById('search-input-textarea');
+    const currentActive = isAiCheckOn ? aiTextarea : normalInput;
+    const currentInactive = isAiCheckOn ? normalInput : aiTextarea;
     const searchTypeContainer = document.getElementById('search-type-container');
-    // *DOM要素は関数内で毎回取得し、最新の状態を反映させる*
-    function getActiveInput() {
-        const activeElement = $(`#search-input-container input:visible, #search-input-container textarea:visible`)[0];
-        return activeElement;
-    }
-    function updateSearchInputName() {
-        const searchInput = getActiveInput();
-        if (!searchTypeSelect || !searchInput) return;
-        // data属性からRansackのベース名を取得 (例: q[article_title_or_lead_text)
-        const baseName = searchInput.dataset.ransackBase; // q[article_title_or_lead_text
-        const selectedType = searchTypeSelect.value;
-        const newName = `q[${baseName}_${selectedType}]`;
-        searchInput.setAttribute('name', newName);
-    }
-    // 初回ロード時の初期name属性の設定は、toggleSearchInputで実行されるため削除
-    if (searchTypeSelect) {
-        searchTypeSelect.addEventListener('change', updateSearchInputName); // 検索タイプ変更時
-    }
-    // ----------------------------------------------------------------------
-    // 2. AI検証トグルボタンの処理
-    // ----------------------------------------------------------------------
-    const toggleButton = document.getElementById('ai-check-toggle');
-    const hiddenField = document.getElementById('use-ai-hidden-field');
     const aiCheckLabel = document.getElementById('ai-check-label');
 
-    // AI検証ON/OFF時の表示を切り替える関数
-    function toggleSearchInput(isAiCheckOn) {
-        const normalInput = document.getElementById('search-input-field');
-        const aiTextarea = document.getElementById('search-input-textarea');
-        const currentActive = isAiCheckOn ? aiTextarea : normalInput;
-        const currentInactive = isAiCheckOn ? normalInput : aiTextarea;
-
-        if (searchTypeContainer && searchTypeSelect) {
-            if (isAiCheckOn) {
-                // AI検証 ON の場合: セレクトボックスを非表示にし、値を 'cont' に強制設定
-                searchTypeContainer.classList.add('d-none');
-                searchTypeSelect.value = 'cont'; // 部分一致に固定
-            } else {
-                // AI検証 OFF の場合: セレクトボックスを表示
-                searchTypeContainer.classList.remove('d-none');
-            }
+    if (searchTypeContainer && searchTypeSelect) {
+        if (isAiCheckOn) {
+            searchTypeContainer.classList.add('d-none');
+            searchTypeSelect.value = 'cont';
+        } else {
+            searchTypeContainer.classList.remove('d-none');
         }
-
-        // name属性を動的に設定/削除し、サーバーへの送信を制御する
-        if (currentActive) {
-            currentActive.parentNode.style.display = 'block'; // 表示
-            const baseName = currentActive.dataset.ransackBase;
-            const selectedType = isAiCheckOn ? 'cont' : searchTypeSelect.value;
-            const newName = `q[${baseName}_${selectedType}]`;
-            currentActive.setAttribute('name', newName);
-        }
-        if (currentInactive) {
-            currentInactive.removeAttribute('name');
-            currentInactive.parentNode.style.display = 'none'; // 非表示
-        }
-        aiCheckLabel.textContent = isAiCheckOn ? 'ON' : 'OFF';
-        console.log("Toggle AI Check:", isAiCheckOn ? 'ON' : 'OFF');
     }
-    // トグルボタンの変更イベント
-    if (toggleButton && hiddenField && normalSearchField && aiSearchTextarea) {
-        // 初回ロード時の状態判定
-        const isInitialAiCheckOn = hiddenField.value === '1';
-        // HTML側のチェックボックスの状態をサーバー側の値に合わせる
-        toggleButton.checked = isInitialAiCheckOn;
-        // 初回ロード時の表示調整 (name属性設定も実行される)
-        toggleSearchInput(isInitialAiCheckOn);
-        // eventListenerは'change'を使用
-        toggleButton.addEventListener('change', () => {
-            const isChecked = toggleButton.checked;
-            // 隠しフィールドの値を設定
-            hiddenField.value = isChecked ? '1' : '';
-            // 表示の切り替えとname属性の設定/削除
-            toggleSearchInput(isChecked);
-            // 検索フィールド間で値を引き継ぐ
-            const normalInput = document.getElementById('search-input-field');
-            const aiTextarea = document.getElementById('search-input-textarea');
-            if (isChecked) {
-                // OFFからONに切り替えた場合 (normal -> textarea)
-                aiTextarea.value = normalInput.value;
-            } else {
-                // ONからOFFに切り替えた場合 (textarea -> normal)
-                normalInput.value = aiTextarea.value;
-            }
-        });
+
+    if (currentActive) {
+        currentActive.parentNode.style.display = 'block';
+        const baseName = currentActive.dataset.ransackBase;
+        const selectedType = isAiCheckOn ? 'cont' : searchTypeSelect.value;
+        const newName = `q[${baseName}_${selectedType}]`;
+        currentActive.setAttribute('name', newName);
     }
-    // ----------------------------------------------------------------------
-    // 3. モーダル関連のJavaScript (検索モーダルの再同期処理を追加)
-    // ----------------------------------------------------------------------
-    const externalModal = document.getElementById('externalModal');
+    if (currentInactive) {
+        currentInactive.removeAttribute('name');
+        currentInactive.parentNode.style.display = 'none';
+    }
+    if (aiCheckLabel) aiCheckLabel.textContent = isAiCheckOn ? 'ON' : 'OFF';
+    console.log("Toggle AI Check:", isAiCheckOn ? 'ON' : 'OFF');
+}
+
+function handleAiCheckChange() {
+    // 🚨 トグルボタンの'change'イベント内の無名関数を名前付き化
+    const hiddenField = document.getElementById('use-ai-hidden-field');
+    const normalInput = document.getElementById('search-input-field');
+    const aiTextarea = document.getElementById('search-input-textarea');
+    const isChecked = toggleButton.checked;
+    hiddenField.value = isChecked ? '1' : '';
+    toggleSearchInput(isChecked);
+    // 検索フィールド間で値を引き継ぐ
+    if (isChecked) {
+        aiTextarea.value = normalInput.value;
+    } else {
+        normalInput.value = aiTextarea.value;
+    }
+}
+
+// --- D. モーダルイベントハンドラ (名前付き関数) ---
+
+function onSearchModalShow() {
+    // 🚨 searchModalの'show.bs.modal'イベント内の無名関数を名前付き化
+    cleanUpModalBackdrops();
+    const isCurrentAiCheckOn = toggleButton.checked;
+    toggleSearchInput(isCurrentAiCheckOn);
+    toggleBodyScrollFix(true);
+    // タブの状態チェックを組み込み (controlSearchParametersの呼び出し)
+    if (tagTab) {
+        const isTagSearch = tagTab.classList.contains('active');
+        controlSearchParameters(isTagSearch);
+    }
+}
+function onSearchModalHidden() {
+    // 🚨 searchModalの'hidden.bs.modal'イベント内の無名関数を名前付き化
+    toggleBodyScrollFix(false);
+}
+
+function onExternalModalShow(event) {
+    // 🚨 externalModalの'show.bs.modal'イベント内の無名関数を名前付き化
+    cleanUpModalBackdrops();
+    toggleBodyScrollFix(true);
     const iframeElement = document.getElementById('embeddedIframe');
     const modalTitleElement = document.getElementById('externalModalLabel');
     const openInNewTabLink = document.getElementById('openInNewTab');
-    // 検索モーダル
-    const searchModal = document.getElementById('searchModal');
+    const button = event.relatedTarget;
+    if (!button) {
+        console.error("Clicked element (relatedTarget) not found.");
+        return;
+    }
+    const url = button.getAttribute('data-detail-url');
+    const title = button.getAttribute('data-article-title');
+    if (url) {
+        iframeElement.src = url;
+        openInNewTabLink.href = url;
+        openInNewTabLink.classList.remove('d-none');
+    } else {
+        iframeElement.src = 'about:blank';
+        openInNewTabLink.classList.add('d-none');
+    }
+    if (modalTitleElement) modalTitleElement.textContent = title || '参考記事';
+}
+function onExternalModalHidden() {
+    // 🚨 externalModalの'hidden.bs.modal'イベント内の無名関数を名前付き化
+    toggleBodyScrollFix(false);
+    const iframeElement = document.getElementById('embeddedIframe');
+    const modalTitleElement = document.getElementById('externalModalLabel');
+    if (iframeElement) iframeElement.src = '';
+    if (modalTitleElement) modalTitleElement.textContent = '参考記事';
+}
 
-    function toggleBodyScrollFix(isModalOpen) {
-        // 既存のBootstrapの .modal-open クラスを上書きし、
-        // iOS/Safariで必要となる position: fixed; を適用するクラスを操作する
-        const fixClass = 'modal-open-fix'; 
-        if (isModalOpen) {
-            document.body.classList.add(fixClass);
-        } else {
-            document.body.classList.remove(fixClass);
-        }
-    }
+// --- E. タグ/タブ/クリア関連イベントハンドラ ---
 
-    if (searchModal && toggleButton) {
-        // 検索モーダルが表示される直前のイベントを捕捉
-        searchModal.addEventListener('show.bs.modal', function() {
-            cleanUpModalBackdrops();
-            // 現在のチェック状態に合わせてUIを強制的に再同期する
-            const isCurrentAiCheckOn = toggleButton.checked;
-            toggleSearchInput(isCurrentAiCheckOn); // name属性と表示を再設定
-            toggleBodyScrollFix(true);
-        });
-
-        searchModal.addEventListener('hidden.bs.modal', function () {
-            toggleBodyScrollFix(false);
-        });
+function onKeywordTabShown() {
+    // 🚨 タブの'shown.bs.tab'イベント内の無名関数を名前付き化
+    controlSearchParameters(false);
+}
+function onTagTabShown() {
+    // 🚨 タブの'shown.bs.tab'イベント内の無名関数を名前付き化
+    controlSearchParameters(true);
+}
+function handleTagRemoveClick(e) {
+    // 🚨 タグ削除イベント内の無名関数を名前付き化
+    e.preventDefault();
+    const tag = e.currentTarget.parentNode.dataset.tag;
+    selectedTags = selectedTags.filter(t => t !== tag);
+    renderSelectedTags();
+    controlSearchParameters(true);
+}
+function handleClearSearchClick() {
+    // 🚨 クリアボタンの'click'イベント内の無名関数を名前付き化
+    const hiddenField = document.getElementById('use-ai-hidden-field');
+    const normalInput = document.getElementById('search-input-field');
+    const aiTextarea = document.getElementById('search-input-textarea');
+    searchTypeSelect.value = 'cont';
+    toggleButton.checked = false;
+    if (hiddenField) hiddenField.value = '';
+    if (normalInput) normalInput.value = '';
+    if (aiTextarea) aiTextarea.value = '';
+    toggleSearchInput(false);
+    selectedTags = [];
+    renderSelectedTags();
+    if (tagInput) tagInput.value = '';
+    if (searchForm) $(searchForm).find('input[name^="q["]').val('');
+}
+function handleTagInputFocus() {
+    // 🚨 tagInputの'focus'イベント内の無名関数を名前付き化
+    const query = tagInput.value.trim();
+    if (query.length === 0) {
+        fetchTagsAndRender('');
     }
-    // 外部モーダル関連（既存コード）
-    if (externalModal) {
-        externalModal.addEventListener('show.bs.modal', function (event) {
-            cleanUpModalBackdrops();
-            toggleBodyScrollFix(true);
-            const button = event.relatedTarget;
-            if (!button) {
-                console.error("Clicked element (relatedTarget) not found.");
-                return;
-            }
-            const url = button.getAttribute('data-detail-url');
-            const title = button.getAttribute('data-article-title');
-            if (url) {
-                iframeElement.src = url;
-                openInNewTabLink.href = url;
-                openInNewTabLink.classList.remove('d-none');
-            } else {
-                iframeElement.src = 'about:blank'; // リンク切れの場合
-                openInNewTabLink.classList.add('d-none');
-            }
-            modalTitleElement.textContent = title || '参考記事';
-        });
-        externalModal.addEventListener('hidden.bs.modal', function () {
-            toggleBodyScrollFix(false);
-            iframeElement.src = '';
-            modalTitleElement.textContent = '参考記事';
-        });
-    }
-    $(document).ready(function() {
-        $(window).on('scroll', checkScroll);
-    });
-    $(document).on('ajax:complete', function() {
-        if ($loadingSpinner) {
-            $loadingSpinner.hide();
-        }
-        setTimeout(function() {
-            if ($('#pagination-links').length) {
-                $(window).on('scroll', checkScroll);
-            }
-        }, 100);
-    });
-    // ----------------------------------------------------------------------
-    // 4. 【新規】検索クリアボタンの処理
-    // ----------------------------------------------------------------------
-    const clearButton = document.getElementById('clear-search-link');
-    if (clearButton && searchTypeSelect && toggleButton && hiddenField) {
-        clearButton.addEventListener('click', () => {
-            // 1. 検索タイプをデフォルト値に戻す (cont: 部分一致)
-            searchTypeSelect.value = 'cont';
-            // 2. AI検証トグルを強制的にOFFの状態に設定
-            toggleButton.checked = false;
-            hiddenField.value = ''; // 隠しフィールドの値もクリア
-            // 3. 検索フィールドの値をクリア
-            const normalInput = document.getElementById('search-input-field');
-            const aiTextarea = document.getElementById('search-input-textarea');
-            if (normalInput) {
-                normalInput.value = '';
-            }
-            if (aiTextarea) {
-                aiTextarea.value = '';
-            }
-            // 4. AI検証トグルOFFの状態にUIを再同期し、name属性を適切に設定し直す
-            // toggleSearchInput内で、normalInputにname属性が設定され、aiTextareaからname属性が削除される
-            toggleSearchInput(false);
-            // 5. タグ関連のクリア
-            selectedTags = []; // 選択中のタグ配列をクリア
-            renderSelectedTags(); // UIと隠しフィールドを更新
-            if (tagInput) tagInput.value = ''; // 予測入力欄をクリア
-            // 6. Ransackのq[...をクリアするために、フォーム内のすべてのq[...]という名前のフィールドをクリア
-            // 検索実行後にモーダルを開いたときに残っている可能性のある古いRansackクエリをクリア
-            $(searchForm).find('input[name^="q["]').val('');
-        });
-    }
-    // ----------------------------------------------------------------------
-    // タブ切り替え時のフォーム制御とタグ検索ロジック
-    // ----------------------------------------------------------------------
-    // const searchModal = document.getElementById('searchModal');
-    const searchForm = searchModal ? searchModal.querySelector('form') : null;
-    // タグ検索要素の取得
-    const tagInput = document.getElementById('tag-search-input');
+}
+function handleTagInputDebounced(func) {
+    // 🚨 debounceでラップされた無名関数を名前付き化
     const tagSuggestionsContainer = document.getElementById('tag-suggestions');
-    const selectedTagsHidden = document.getElementById('selected-tags-hidden');
-    const selectedTagsDisplay = document.getElementById('selected-tags-display');
-    // 💡 全ての検索要素の name 属性を制御する関数
-    function controlSearchParameters(isTagSearchActive) {
-        // キーワードフィールドの制御
-        const currentKeywordInput = getActiveInput(); // 現在表示されている入力フィールド
-        if (currentKeywordInput) {
-            if (isTagSearchActive) {
-                // タグ検索時はキーワードフィールドを無効化 (name属性を削除)
-                currentKeywordInput.removeAttribute('name');
-            } else {
-                // キーワード検索時はキーワードフィールドを有効化 (name属性を設定)
-                updateSearchInputName();
-            }
-        }
-        // タグ隠しフィールドの制御
-        if (selectedTagsHidden) {
-            if (isTagSearchActive) {
-                // タグ検索時はタグ隠しフィールドを有効化
-                selectedTagsHidden.setAttribute('name', 'q[tag_in]');
-            } else {
-                // キーワード検索時はタグ隠しフィールドを無効化
-                selectedTagsHidden.removeAttribute('name');
-            }
-        }
-        if (tagInput) {
-            if (isTagSearchActive) {
-                tagInput.removeAttribute('name');
-            } else {
-                // キーワード検索タブにいる場合、tag_inputはダミーのnameを設定しても良いが、
-                // 最も安全なのは name を持たせないこと。ここではremoveAttributeのまま維持。
-            }
-        }
+    const query = tagInput.value.trim();
+    if (query.length < 2) {
+        if(tagSuggestionsContainer) tagSuggestionsContainer.innerHTML = '';
+        return;
     }
-    // --- タブ切り替え時のイベントリスナー ---
-    const keywordTab = document.getElementById('keyword-tab');
-    const tagTab = document.getElementById('tag-tab');
+    fetchTagsAndRender(query);
+}
+function handleSuggestionClick(e) {
+    // 🚨 タグ候補の'click'イベント内の無名関数を名前付き化
+    e.preventDefault();
+    const tag = e.currentTarget.textContent;
+    const tagSuggestionsContainer = document.getElementById('tag-suggestions');
+    
+    if (!selectedTags.includes(tag)) {
+        selectedTags.push(tag);
+        renderSelectedTags();
+        if(tagInput) tagInput.value = '';
+        if(tagSuggestionsContainer) tagSuggestionsContainer.innerHTML = '';
+    }
+}
 
-    if (keywordTab && tagTab) {
-        // タブが切り替わったときにパラメータの制御を実行
-        keywordTab.addEventListener('shown.bs.tab', () => controlSearchParameters(false));
-        tagTab.addEventListener('shown.bs.tab', () => controlSearchParameters(true));
-        // モーダルが初めて開かれたときにも実行（初期表示がタグ検索でない場合）
-        searchModal.addEventListener('show.bs.modal', () => {
-             // アクティブなタブの状態を確認してパラメータを初期設定
-            const isTagSearch = tagTab.classList.contains('active');
-            controlSearchParameters(isTagSearch);
-        });
+// --- F. AJAX/FETCH関連ハンドラ ---
+
+function handleFetchSuccess(response) {
+    // 🚨 fetchの.then(response => ...)内の無名関数を名前付き化
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
     }
-    // --- タグ検索ロジック ---
-    // ページロード時の初期値を取得
-    let selectedTags = selectedTagsHidden && selectedTagsHidden.value ? selectedTagsHidden.value.split(',').filter(t => t.trim() !== '') : [];
-    // 選択されたタグのUIを更新
-    function renderSelectedTags() {
-        if (!selectedTagsDisplay || !selectedTagsHidden) return;
-        selectedTagsDisplay.innerHTML = '';
-        // 隠しフィールドを更新 (Ransackの配列検索に対応するためカンマ区切り)
-        selectedTagsHidden.value = selectedTags.join(','); 
-        selectedTags.forEach(tag => {
-            const tagChip = document.createElement('span');
-            tagChip.className = 'badge bg-primary text-light tag-chip me-2 p-2';
-            tagChip.innerHTML = `${tag} <span class="tag-remove" style="cursor: pointer; margin-left: 5px;">&times;</span>`;
-            tagChip.dataset.tag = tag;
-            // 削除ボタンのイベント
-            tagChip.querySelector('.tag-remove').addEventListener('click', (e) => {
-                e.preventDefault();
-                // タグを配列から削除
-                selectedTags = selectedTags.filter(t => t !== tag);
-                renderSelectedTags();
-                // タグを削除したときに、検索タイプも更新されるようにする
-                controlSearchParameters(true);
-            });
-            selectedTagsDisplay.appendChild(tagChip);
-        });
-    }
-    // --- ユーティリティ: デバウンス関数 ---
-    function debounce(func, timeout = 300) {
-        let timer;
-        return (...args) => {
+    return response.json();
+}
+function handleFetchRender(tags) {
+    // 🚨 fetchの.then(tags => ...)内の無名関数を名前付き化
+    renderSuggestions(tags);
+}
+function handleFetchError(error) {
+    // 🚨 fetchの.catch(error => ...)内の無名関数を名前付き化
+    const tagSuggestionsContainer = document.getElementById('tag-suggestions');
+    console.error('Error in tag suggestion pipeline:', error); 
+    if(tagSuggestionsContainer) tagSuggestionsContainer.innerHTML = '';
+}
+function fetchTagsAndRender(query) {
+    fetch(`/tags/suggestions?q=${encodeURIComponent(query)}`)
+        .then(handleFetchSuccess)
+        .then(handleFetchRender)
+        .catch(handleFetchError);
+}
+
+// --- G. デバウンスとJQueryイベントハンドラ ---
+
+function debounce(func, timeout = 300) {
+    let timer;
+    return (...args) => {
         clearTimeout(timer);
         timer = setTimeout(() => { func.apply(this, args); }, timeout);
-        };
+    };
+}
+function handleAjaxComplete() {
+    isFetchingArticles = false;
+    // 🚨 $(document).on('ajax:complete') の無名関数を名前付き化
+    if ($loadingSpinner) {
+        $loadingSpinner.hide();
+    }
+}
+
+
+// --- H. イベントリスナー解除関数 (完成版) ---
+
+function removeEventListeners() {
+    // 1. スクロールイベントの解除 (jQuery)
+    $(window).off('scroll', checkScroll);
+    // 2. jQuery document イベントの解除 (名前付き関数を使用)
+    $(document).off('ajax:complete', handleAjaxComplete); 
+    // 3. DOM要素のイベントリスナーの解除
+    if (searchTypeSelect) {
+        searchTypeSelect.removeEventListener('change', updateSearchInputName);
+    }
+    if (toggleButton) {
+        toggleButton.removeEventListener('change', handleAiCheckChange);
+    }
+    if (searchModal) {
+        searchModal.removeEventListener('show.bs.modal', onSearchModalShow);
+        searchModal.removeEventListener('hidden.bs.modal', onSearchModalHidden);
+    }
+    if (externalModal) {
+        externalModal.removeEventListener('show.bs.modal', onExternalModalShow);
+        externalModal.removeEventListener('hidden.bs.modal', onExternalModalHidden);
+    }
+    if (keywordTab) {
+        keywordTab.removeEventListener('shown.bs.tab', onKeywordTabShown);
+    }
+    if (tagTab) {
+        tagTab.removeEventListener('shown.bs.tab', onTagTabShown);
+    }
+    const clearButton = document.getElementById('clear-search-link');
+    if (clearButton) {
+        clearButton.removeEventListener('click', handleClearSearchClick);
+    }
+    if (tagInput) {
+        tagInput.removeEventListener('focus', handleTagInputFocus);
+        tagInput.removeEventListener('input', handleTagInputDebounced);
+    }
+}
+
+// --- I. Ransack/タグ検索ヘルパー関数 (既存を維持) ---
+
+function renderSuggestions(tags) {
+    const tagSuggestionsContainer = document.getElementById('tag-suggestions');
+    if (!tagSuggestionsContainer) return;
+    tagSuggestionsContainer.innerHTML = '';
+    if (tags.length === 0) {
+        tagSuggestionsContainer.innerHTML = '<div class="list-group-item text-muted">候補がありません</div>';
+        return;
+    }
+    tags.forEach(tag => {
+        if (selectedTags.includes(tag)) return;
+        const suggestion = document.createElement('button');
+        suggestion.className = 'list-group-item list-group-item-action';
+        suggestion.textContent = tag;
+        suggestion.addEventListener('click', handleSuggestionClick);
+        tagSuggestionsContainer.appendChild(suggestion);
+    });
+}
+function controlSearchParameters(isTagSearchActive) {
+    const currentKeywordInput = getActiveInput();
+    const selectedTagsHidden = document.getElementById('selected-tags-hidden');
+    if (currentKeywordInput) {
+        if (isTagSearchActive) {
+            currentKeywordInput.removeAttribute('name');
+        } else {
+            updateSearchInputName();
+        }
+    }
+    if (selectedTagsHidden) {
+        if (isTagSearchActive) {
+            selectedTagsHidden.setAttribute('name', 'q[tag_in]');
+        } else {
+            selectedTagsHidden.removeAttribute('name');
+        }
+    }
+    if (tagInput) {
+        if (isTagSearchActive) {
+            tagInput.removeAttribute('name');
+        }
+    }
+}
+function renderSelectedTags() {
+    // 💡 selectedTagsDisplay, selectedTagsHidden は turbolinks:load で設定されることを前提
+    const selectedTagsDisplay = document.getElementById('selected-tags-display');
+    const selectedTagsHidden = document.getElementById('selected-tags-hidden');
+    if (!selectedTagsDisplay || !selectedTagsHidden) return;
+    selectedTagsDisplay.innerHTML = '';
+    selectedTagsHidden.value = selectedTags.join(',');
+    selectedTags.forEach(tag => {
+        const tagChip = document.createElement('span');
+        tagChip.className = 'badge bg-primary text-light tag-chip me-2 p-2';
+        tagChip.innerHTML = `${tag} <span class="tag-remove" style="cursor: pointer; margin-left: 5px;">&times;</span>`;
+        tagChip.dataset.tag = tag;
+        tagChip.querySelector('.tag-remove').addEventListener('click', handleTagRemoveClick);
+        selectedTagsDisplay.appendChild(tagChip);
+    });
+}
+
+
+// --- J. メイン実行ブロック（Turbolinks:load） ---
+
+document.addEventListener('turbolinks:load', function() {
+    // 💡 Turbolinksによるページ遷移で、古いイベントリスナーが残るのを防ぐ
+    removeEventListeners();
+    // --- 1. 変数の再取得 (ファイルスコープ変数に代入) ---
+    $loadingSpinner = $('#loading-spinner');
+    searchTypeSelect = document.getElementById('search_type');
+    toggleButton = document.getElementById('ai-check-toggle');
+    searchModal = document.getElementById('searchModal');
+    externalModal = document.getElementById('externalModal');
+    tagInput = document.getElementById('tag-search-input');
+    selectedTagsHidden = document.getElementById('selected-tags-hidden');
+    selectedTagsDisplay = document.getElementById('selected-tags-display');
+    searchForm = searchModal ? searchModal.querySelector('form') : null;
+    keywordTab = document.getElementById('keyword-tab');
+    tagTab = document.getElementById('tag-tab');
+    const hiddenField = document.getElementById('use-ai-hidden-field');
+    const normalSearchField = document.getElementById('search-input-field');
+    const aiSearchTextarea = document.getElementById('search-input-textarea');
+    const clearButton = document.getElementById('clear-search-link');
+    // ページロード時の初期タグ値を再取得
+    selectedTags = selectedTagsHidden && selectedTagsHidden.value ? selectedTagsHidden.value.split(',').filter(t => t.trim() !== '') : [];
+    if (!document.body) {
+        return;
+    }
+    // --- 2. イベントリスナー登録 (名前付き関数を使用) ---
+    // Ransack検索タイプの切り替え
+    if (searchTypeSelect) {
+        searchTypeSelect.addEventListener('change', updateSearchInputName);
+    }
+    // AI検証トグルボタン
+    if (toggleButton && hiddenField && normalSearchField && aiSearchTextarea) {
+        const isInitialAiCheckOn = hiddenField.value === '1';
+        toggleButton.checked = isInitialAiCheckOn;
+        toggleSearchInput(isInitialAiCheckOn);
+        toggleButton.addEventListener('change', handleAiCheckChange);
+    }
+    // モーダルイベント
+    if (searchModal) {
+        searchModal.addEventListener('show.bs.modal', onSearchModalShow);
+        searchModal.addEventListener('hidden.bs.modal', onSearchModalHidden);
+    }
+    if (externalModal) {
+        externalModal.addEventListener('show.bs.modal', onExternalModalShow);
+        externalModal.addEventListener('hidden.bs.modal', onExternalModalHidden);
+    }
+    // スクロールとAJAXイベント (無限スクロール)
+    if ($(window).length > 0) {
+        $(window).off('scroll', checkScroll).on('scroll', checkScroll);
+    }
+    $(document).off('ajax:complete', handleAjaxComplete).on('ajax:complete', handleAjaxComplete);
+
+    // 検索クリアボタン
+    if (clearButton) {
+        clearButton.addEventListener('click', handleClearSearchClick);
     }
 
-    // 予測表示ロジック (Ajax)
+    // タブ切り替え
+    if (keywordTab && tagTab) {
+        keywordTab.addEventListener('shown.bs.tab', onKeywordTabShown);
+        tagTab.addEventListener('shown.bs.tab', onTagTabShown);
+        // searchModalのshowイベント内のタブ切り替え初期設定ロジックは、onSearchModalShow内に移動済み
+    }
+    // タグ検索ロジック
     if (tagInput) {
-        // ページロード時に選択済みのタグをレンダリング (既存)
         renderSelectedTags();
-
-        // --- フォーカスイベント ---
-        tagInput.addEventListener('focus', function() {
-            const query = tagInput.value.trim();
-            // 入力が空の場合のみ、全タグ候補を取得 (q="")
-            if (query.length === 0) {
-                // queryを空にしてAjaxリクエストを実行
-                fetchTagsAndRender('');
-            }
-        });
-        // --- Inputイベント ---
-        tagInput.addEventListener('input', debounce(function() {
-            const query = tagInput.value.trim();
-            if (query.length < 2) {
-                tagSuggestionsContainer.innerHTML = '';
-                return;
-            }
-            fetchTagsAndRender(query);
-
-        }, 300));
-        // --- Ajax実行ロジックを関数化 ---
-        function fetchTagsAndRender(query) {
-            fetch(`/tags/suggestions?q=${encodeURIComponent(query)}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(tags => { 
-                    renderSuggestions(tags); 
-                })
-                .catch(error => { 
-                    console.error('Error in tag suggestion pipeline:', error); 
-                    tagSuggestionsContainer.innerHTML = '';
-                });
-        }
-        // タグの候補をレンダリング (既存)
-        function renderSuggestions(tags) {
-             // ... (既存のrenderSuggestions関数の内容) ...
-            tagSuggestionsContainer.innerHTML = '';
-            if (tags.length === 0) {
-                tagSuggestionsContainer.innerHTML = '<div class="list-group-item text-muted">候補がありません</div>';
-                return;
-            }
-            tags.forEach(tag => {
-                // ... (タグのレンダリングロジックはそのまま) ...
-                if (selectedTags.includes(tag)) return;
-                const suggestion = document.createElement('button');
-                suggestion.className = 'list-group-item list-group-item-action';
-                suggestion.textContent = tag;
-                suggestion.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    if (!selectedTags.includes(tag)) {
-                        selectedTags.push(tag);
-                        renderSelectedTags();
-                        tagInput.value = '';
-                        tagSuggestionsContainer.innerHTML = '';
-                    }
-                });
-                tagSuggestionsContainer.appendChild(suggestion);
-            });
-        }
-        // ページロード時に選択済みのタグをレンダリング
-        renderSelectedTags();
+        tagInput.addEventListener('focus', handleTagInputFocus);
+        tagInput.addEventListener('input', handleTagInputDebounced);
     }
 });
+
+// 💡 ページキャッシュ前にイベントを解除するためのリスナー
+document.addEventListener('turbolinks:before-cache', removeEventListeners);
