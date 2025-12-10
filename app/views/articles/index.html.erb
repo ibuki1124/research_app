@@ -1,51 +1,40 @@
-<div class="container mt-5">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <%= link_to "フェイクニュース検索サイト", root_path, class: "h1 link-underline link-underline-opacity-0" %>
-    <%# 検索モーダルを開くボタンを設置 %>
-    <a href="#" data-bs-toggle="modal" data-bs-target="#searchModal" role="button" aria-label="検索・絞り込みを開く" style="text-decoration: none; color: inherit;">
-      <i class="fa-solid fa-magnifying-glass fa-2x"></i>
-    </a>
-  </div>
+<%# ---------------------------------------------------- %>
+<%# 【非同期AI検索結果のコンテナ】 %>
+<div id="ai-search-results" data-identifier="<%= session.id %>">
+  <% if @search_term.present? %>
+    <div id="current-search-data" data-term="<%= @search_term %>" style="display: none;"></div>
+  <% end %>
+  <% if @search_term.present? && @use_ai %>
+    <h2>AI検索による関連記事</h2>
+    <%# ジョブ実行中、ここにローディングメッセージを表示 %>
+    <div class="ai-loading-message alert alert-info" role="alert">
+      <p>AIが関連記事を検索中です... (30秒程度かかります)</p>
+    </div>
+  <% elsif @search_term.present? %>
+    <div class="alert alert-warning" role="alert">
+      <p>AI検索を実行するには、AI検索を有効化してください。</p>
+    </div>
+  <% end %>
+</div>
+<%# ---------------------------------------------------- %>
 
-  <%# ---------------------------------------------------- %>
-  <%# 【非同期AI検索結果のコンテナ】 %>
-  <div id="ai-search-results" data-identifier="<%= session.id %>">
-    <% if @search_term.present? %>
-      <div id="current-search-data" data-term="<%= @search_term %>" style="display: none;"></div>
-    <% end %>
-    <hr>
-    <% if @search_term.present? && @use_ai %>
-      <h2>AI検索による関連記事</h2>
-      <%# ジョブ実行中、ここにローディングメッセージを表示 %>
-      <div class="ai-loading-message alert alert-info" role="alert">
-        <p>AIが関連記事を検索中です... (30秒程度かかります)</p>
-      </div>
-    <% elsif @search_term.present? %>
-      <div class="alert alert-warning" role="alert">
-        <p>AI検索を実行するには、AI検索を有効化してください。</p>
-      </div>
-    <% end %>
-  </div>
-  <%# ---------------------------------------------------- %>
+<table class="table table-hover mt-4">
+  <thead class="table-light">
+    <tr>
+      <th>タイトル</th>
+    </tr>
+  </thead>
+  <tbody id="articles-list"> <%# 💡 IDを追加 %>
+    <%= render partial: 'article', collection: @articles %>
+  </tbody>
+</table>
 
-  <table class="table table-hover mt-4">
-    <thead class="table-light">
-      <tr>
-        <th>タイトル</th>
-      </tr>
-    </thead>
-    <tbody id="articles-list"> <%# 💡 IDを追加 %>
-      <%= render partial: 'article', collection: @articles %>
-    </tbody>
-  </table>
+<div id="loading-spinner" style="display: none; text-align: center;" class="mt-0">
+  <div class="loader">Loading...</div>
+</div>
 
-  <div id="loading-spinner" style="display: none; text-align: center;" class="mt-0">
-    <div class="loader">Loading...</div>
-  </div>
-
-  <div id="pagination-links" style="display: none;">
-    <%= paginate @articles, remote: true %>
-  </div>
+<div id="pagination-links" style="display: none;">
+  <%= paginate @articles, remote: true %>
 </div>
 
 <%# ======================================================= %>
