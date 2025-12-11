@@ -163,10 +163,48 @@
                     <iframe id="embeddedIframe" src="" loading="lazy" class="w-100 h-100 border-0"></iframe>
                 </div>
             </div>
-            <div class="modal-footer justify-content-start">
+            <div class="modal-footer d-flex justify-content-between">
+              <div>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
                 <a id="openInNewTab" href="#" target="_blank" class="btn btn-outline-primary">元サイトで開く (別タブ)</a>
+              </div>
+              <div>
+                <button 
+                  class="btn btn-outline-warning" 
+                  type="button" 
+                  data-bs-toggle="offcanvas" 
+                  data-bs-target="#externalModalHint" 
+                  aria-controls="externalModalHint" 
+                >
+                  <i class="fa-solid fa-lightbulb"></i>
+                </button>
+              </div>
             </div>
         </div>
+    </div>
+</div>
+
+<%# ======================================================= %>
+<%# 【新規】ヒント Offcanvas コンポーネント %>
+<%# ======================================================= %>
+
+<div class="offcanvas offcanvas-start w-75" tabindex="-1" id="externalModalHint" aria-labelledby="externalModalHintLabel" style="z-index: 1070;">
+    <div class="offcanvas-header bg-light">
+        <h5 class="offcanvas-title" id="externalModalHintLabel"><i class="fa-solid fa-lightbulb text-warning"></i> ヒント: 外部サイト表示時の注意点</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <p>記事を表示する際、セキュリティ上の制約により、いくつかの問題が発生する場合があります。</p>
+
+        <h6>接続エラー/空白が表示された場合</h6>
+        <p class="alert alert-warning">
+            「～～で接続が拒否されました」<br>
+            あるいは空白画面が表示された場合は、このアプリ内での表示が制限されている可能性があります。
+        </p>
+        <p>この場合、フッターの「元サイトで開く (別タブ)」ボタンをクリックし、ブラウザで直接サイトを確認してください。</p>
+
+        <h6>ページ内機能の制限</h6>
+        <p>ポップアップ、ダウンロード、位置情報サービスなど、一部のブラウザ機能が制限される場合があります。</p>
+        <p>これらの機能を利用するには、元サイトで直接開いてください。</p>
     </div>
 </div>
