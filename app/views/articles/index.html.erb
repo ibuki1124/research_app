@@ -60,10 +60,10 @@
         </li>
       </ul>
       <%= search_form_for @q, url: articles_path, method: :get, class:"d-flex flex-column form-height" do |f| %>
-        <div class="tab-content" id="searchTabContent">
+        <div class="tab-content flex-grow-1" id="searchTabContent">
           <%# --- 💡 1. キーワード検索タブ (既存のフォームを配置) --- %>
-          <div class="tab-pane fade show active" id="keyword-pane" role="tabpanel" aria-labelledby="keyword-tab">
-            <div class="modal-body">
+          <div class="tab-pane fade show active h-100" id="keyword-pane" role="tabpanel" aria-labelledby="keyword-tab">
+            <div class="modal-body h-100 d-flex flex-column overflow-x-hidden">
               <div class="row g-3 align-items-center mb-4">
                 <%# --- 2. AI検証トグル --- %>
                 <% is_on = params[:use_ai_check] == '1' %>
@@ -83,7 +83,7 @@
                 </div>
               </div>
               <%# --- 3. 入力フィールドのコンテナ --- %>
-              <div id="search-input-container">
+              <div id="search-input-container" class="flex-grow-1">
                 <%# 通常のテキストフィールド (デフォルト) %>
                 <div id="normal-search-field" style="<%= 'display: none;' if is_on %>">
                   <%= text_field_tag "search_placeholder", @search_term,
@@ -94,12 +94,12 @@
                       data: { ransack_base: "article_title_or_lead_text" } %>
                 </div>
                 <%# AI検索用テキストエリア (AI ON時) %>
-                <div id="ai-search-textarea" style="<%= 'display: none;' unless is_on %>">
+                <div id="ai-search-textarea" class="h-100" style="<%= 'display: none;' unless is_on %>">
                   <%= text_area_tag "search_placeholder", @search_term,
                       placeholder: "フェイクニュースの可能性を検証したい内容を記載してください。\nより詳細な情報を提供するほど、AIの検証精度が向上します。\n（例：記事のタイトル、記事の要約、疑わしい点など）",
-                      class: 'form-control',
+                      class: 'form-control h-100',
+                      style: 'resize: none;',
                       id: 'search-input-textarea',
-                      rows: 5,
                       name: (is_on ? "search_placeholder" : ''),
                       data: { ransack_base: "article_title_or_lead_text" } %>
                 </div>
@@ -136,7 +136,7 @@
           </div>
         </div>
         <%# --- フッター（クリアボタン、実行ボタン）は共通 --- %>
-        <div class="modal-footer d-flex justify-content-between mt-auto">
+        <div class="modal-footer d-flex justify-content-between mt-au">
           <div>
             <%# ページ遷移を防ぎ、フォームの内容を初期状態にリセットするボタン %>
             <button type="button" id="clear-search-link" class="btn btn-outline-secondary">クリア</button>
