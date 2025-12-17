@@ -1,6 +1,6 @@
 <%# ---------------------------------------------------- %>
 <%# 【非同期AI検索結果のコンテナ】 %>
-<div id="ai-search-results" data-identifier="<%= session.id %>">
+<div id="ai-search-results" data-identifier="<%= @ai_search_id %>">
   <% if @search_term.present? %>
     <div id="current-search-data" data-term="<%= @search_term %>" style="display: none;"></div>
   <% end %>

@@ -10,7 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2025_10_01_234519) do
+ActiveRecord::Schema.define(version: 2025_12_17_093611) do
+
+  create_table "ai_search_results", force: :cascade do |t|
+    t.string "session_id"
+    t.text "html_content"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
 
   create_table "articles", force: :cascade do |t|
     t.string "tag"

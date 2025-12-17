@@ -229,6 +229,31 @@ function fetchTagsAndRender(query) {
         .catch(handleFetchError);
 }
 
+window.checkAiSearchResultStatus = function() {
+    const container = document.getElementById('ai-search-results');
+    if (!container || !container.querySelector('.ai-loading-message')) return;
+
+    // 💡 検索ワードではなく、HTMLに埋め込まれた「開始時のID」を取得
+    const sessionId = container.dataset.identifier;
+
+    // session_id をパラメータとして送る
+    fetch(`/articles/ai_search_status?session_id=${sessionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'completed') {
+                container.innerHTML = data.html_content;
+            }
+        });
+};
+
+function handleVisibilityChange() {
+    // タブが「隠れた状態」から「表示された状態」に変わったとき
+    if (document.visibilityState === 'visible') {
+        console.log("Tab became active. Checking AI status...");
+        checkAiSearchResultStatus();
+    }
+}
+
 // --- G. デバウンスとJQueryイベントハンドラ ---
 
 function debounce(func, timeout = 300) {
@@ -411,6 +436,13 @@ document.addEventListener('turbolinks:load', function() {
         tagInput.addEventListener('focus', handleTagInputFocus);
         tagInput.addEventListener('input', handleTagInputDebounced);
     }
+
+    // --- 3. タブ復帰時の AI ステータスチェック ---
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // 初回読み込み時も実行
+    checkAiSearchResultStatus();
 });
 
 // 💡 ページキャッシュ前にイベントを解除するためのリスナー

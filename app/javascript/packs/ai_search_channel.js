@@ -20,6 +20,9 @@ function subscribeToChannel() {
     subscription = consumer.subscriptions.create({ channel: "AiSearchChannel", identifier: identifier }, {
       connected() {
         console.log("Connected to AI Search Channel.");
+        if (typeof window.checkAiSearchResultStatus === 'function') {
+          window.checkAiSearchResultStatus();
+        }
       },
 
       disconnected() {

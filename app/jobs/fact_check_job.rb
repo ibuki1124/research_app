@@ -37,6 +37,10 @@ class FactCheckJob < ApplicationJob
       }
     )
 
+    # 既存の結果があれば更新、なければ作成
+    result = AiSearchResult.find_or_initialize_by(session_id: identifier)
+    result.update!(html_content: final_html)
+
     # 4. Action Cableで最終結果をブラウザに通知
     ActionCable.server.broadcast("ai_search_#{identifier}", {
       html: final_html, # フロントエンドが画面を置き換える

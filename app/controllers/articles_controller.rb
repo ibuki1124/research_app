@@ -45,6 +45,8 @@ class ArticlesController < ApplicationController
 
     # 【AI検索機能の追加】
     if @search_term.present? && @use_ai && (params[:page].blank? || params[:page] == '1')
+      @ai_search_id = SecureRandom.uuid
+
       internal_info_for_ai = @articles.map do |article|
         { id: article.id, title: article.article_title, lead: article.lead_text }
       end.to_json
@@ -52,13 +54,24 @@ class ArticlesController < ApplicationController
       AiSearchJob.perform_later(
         @search_term,
         internal_info_for_ai,
-        session.id.to_s
+        @ai_search_id
       )
     end
     @ai_articles = []
     respond_to do |format|
       format.html
       format.js
+    end
+  end
+
+  def ai_search_status
+    # データベースから検索
+    result = AiSearchResult.find_by(session_id: params[:session_id])
+    if result
+      render json: { status: 'completed', html_content: result.html_content }
+      result.destroy
+    else
+      render json: { status: 'processing' }
     end
   end
 
