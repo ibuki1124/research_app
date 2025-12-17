@@ -110,13 +110,13 @@ class GeminiService
         
       rescue => e
         # 予期せぬ致命的な処理エラー
-        error_message = "AI検索処理中に致命的なエラーが発生しました。"
+        error_message = "データの読み込みに失敗しました。しばらく時間を置いてから、もう一度お試しください。"
         Rails.logger.error "Critical Processing Error: #{e.class} - #{e.message}"
         return { articles: [], error: error_message }
       end
     else
       # Python実行エラー時の処理
-      error_message = "AI検索でエラーが発生しました。（Python実行エラー）"
+      error_message = "現在、AI検索機能をご利用いただけません。<br>通信状態を確認するか、管理者までお問い合わせください。"
       Rails.logger.error "Python Script Error: #{stderr}"
       return { articles: [], error: error_message }
     end
@@ -144,7 +144,7 @@ class GeminiService
     else
       Rails.logger.error "Judgment Python Script Error: #{stderr}"
       # 失敗時はエラーJSONを返すか、適切なエラー処理を行う
-      return '{"score": 0, "verdict": "エラー", "reason": "判定プロセスでエラーが発生しました"}' 
+      return '{"score": 0, "verdict": "unverified", "reason": "情報の検証を完了できませんでした。再度お試しください。"}'
     end
   end
 end

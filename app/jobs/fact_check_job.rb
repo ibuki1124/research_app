@@ -15,7 +15,7 @@ class FactCheckJob < ApplicationJob
     judgment_prompt = build_judgment_prompt(search_term, internal_info_json, external_results_json)
 
     # 2. Gemini APIへの第2リクエスト（判定専用）を実行
-    judgment_result_json = call_gemini_api_for_judgment(judgment_prompt)
+    judgment_result_json = GeminiService.analyze_for_misinformation(judgment_prompt)
     clean_judgment_json = judgment_result_json.to_s.sub(/^```json\s*/, '').sub(/\s*```$/, '')
     
     # 3. 最終的な結果のレンダリング
@@ -81,38 +81,5 @@ class FactCheckJob < ApplicationJob
     prompt += "以下のJSON形式で、`credibility_score`(1-5の整数)、`verdict`('true'/'misinformation'/'unverified')、`reason`を返してください。JSON形式以外のテキスト、説明、Markdown記法（例：```json）は**一切含めないでください**。\n\n"
     prompt += "{{\"credibility_score\": 1-5の整数, \"verdict\": \"true/misinformation/unverifiedのいずれか\", \"reason\": \"判定に至った具体的な根拠と情報源の比較結果の要約\"}}"
     return prompt
-  end
-
-  # Gemini API呼び出しロジック（Fact Check Job専用）
-  def call_gemini_api_for_judgment(prompt)
-    if Rails.env.production? || ENV['RAILS_ENV'] == 'production'
-      # Heroku (production) 環境の場合: PATH にある 'python3' を使用
-      python_executable = 'python3'
-    else
-      # ローカル環境 (development/test) の場合: ローカル仮想環境のパスを使用
-      python_executable = Rails.root.join('venv_gemini', 'bin', 'python3').to_s
-    end
-    
-    # 判定専用スクリプトのパス
-    python_judgment_script = Rails.root.join('lib', 'python', 'gemini_judgment.py').to_s
-    # 環境変数が設定されていない場合に備え、fetchでエラーを発生させる
-    gemini_api_key = ENV.fetch('GEMINI_API_KEY')
-    command = [python_executable, python_judgment_script, prompt, gemini_api_key]
-    
-    Rails.logger.info "Executing Judgment command..."
-
-    stdout, stderr, status = Open3.capture3(*command)
-
-    if status.success?
-      # Pythonスクリプトの標準出力（JSON）を返す
-      raw_output = stdout.to_s.strip
-      Rails.logger.info "Judgment Python Raw Output: #{raw_output}"
-      return raw_output
-    else
-      # Python実行エラー時の処理
-      Rails.logger.error "Judgment Python Script Error: #{stderr}"
-      # 失敗時はエラーJSONを返す
-      return '{"misinformation_score": 0, "verdict": "unverified", "reason": "判定プロセス(Python)でエラーが発生しました"}'
-    end
   end
 end

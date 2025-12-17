@@ -1,11 +1,33 @@
 <%# app/views/articles/_ai_error_results.html.erb %>
 <%# locals: { error_message: "..." } %>
 
-<div id="ai-search-results-content" style="border: 2px solid #880000; padding: 15px; margin-top: 20px; background-color: #ffe0e0;">
-  <h3>⚠️ 情報検証エラー ⚠️</h3>
-  <p>情報検証処理中に問題が発生しました。ブラウザの表示が更新されなかったため、以下のエラーを確認してください。</p>
-  
-  <p><strong>エラー詳細:</strong> <%= error_message %></p>
-  
-  <p>時間を置いて再度検索するか、管理者にお問い合わせください。</p>
+<div id="ai-search-results-content" class="card border-danger shadow-sm mt-4">
+  <div class="card-body p-4">
+    <div class="d-flex align-items-start">
+      <div class="me-3 mt-1">
+        <span class="fa-stack fa-lg">
+          <i class="fa-solid fa-triangle-exclamation fa-stack-2x text-danger"></i>
+          <i class="fa-solid fa-exclamation fa-stack-1x text-white"></i>
+        </span>
+      </div>
+      <div class="flex-grow-1">
+        <h5 class="card-title text-danger fw-bold mb-2">情報の取得に失敗しました</h5>
+        <p class="card-text text-secondary mb-3">
+          AIによる検索処理中に問題が発生したため、結果を表示できませんでした。
+        </p>
+        <div class="bg-light p-3 rounded border-start border-4 border-danger mb-3">
+          <small class="text-muted d-block mb-1">エラーの理由:</small>
+          <span class="text-dark fw-medium"><%= error_message.html_safe %></span>
+        </div>
+        <div class="d-flex gap-2 mt-2">
+          <button onclick="window.location.reload();" class="btn btn-outline-danger btn-sm">
+            <i class="fa-solid fa-rotate-right me-1"></i>同じ条件で検索する
+          </button>
+          <%= link_to root_path, class: "btn btn-secondary btn-sm" do %>
+              閉じる
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
