@@ -36,7 +36,23 @@ function handleDelayedClick(nextLink) {
     nextLink[0].click();
 }
 
-// --- B. モーダル・UIヘルパー関数 ---
+// --- B. モーダル/オフキャンバス・UIヘルパー関数 ---
+
+function completelyResetBootstrap() {
+    // 1. 黒い背景幕をすべて物理削除
+    document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop').forEach(b => b.remove());
+    // 2. bodyのロック解除
+    document.body.classList.remove('modal-open', 'overflow-hidden');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+    // 3. 【最重要】Bootstrapの古いインスタンスを破棄（無限ループの元を断つ）
+    document.querySelectorAll('.modal, .offcanvas').forEach(el => {
+        const modal = bootstrap.Modal.getInstance(el);
+        if (modal) modal.dispose();
+        const offcanvas = bootstrap.Offcanvas.getInstance(el);
+        if (offcanvas) offcanvas.dispose();
+    });
+}
 
 function cleanUpModalBackdrops() {
     const backdrops = document.querySelectorAll('.modal-backdrop');
@@ -44,6 +60,28 @@ function cleanUpModalBackdrops() {
         backdrop.remove();
     });
     // 💡 削除: bodyからクラスとスタイルを削除するロジックはBootstrapに任せる
+}
+
+// --- D. モーダル/オフキャンバイベントハンドラ (手動制御) ---
+
+// 検索モーダルを手動で開く
+function openSearchModal(e) {
+    e.preventDefault();
+    completelyResetBootstrap(); // 開く前に掃除
+    const el = document.getElementById('searchModal');
+    const modal = new bootstrap.Modal(el);
+    modal.show();
+}
+
+// オフキャンバスを手動で開く（モーダルとの競合を避ける）
+function openHintOffcanvas(e) {
+    e.preventDefault();
+    // 💡 幕のゴミだけ消す（モーダルの幕は消さないようにする）
+    document.querySelectorAll('.offcanvas-backdrop').forEach(b => b.remove());
+    const el = document.getElementById('externalModalHint');
+    // 💡 focus: false オプションをJSで強制適用
+    const offcanvas = new bootstrap.Offcanvas(el, { focus: false });
+    offcanvas.show();
 }
 
 function getActiveInput() {
@@ -370,6 +408,7 @@ function renderSelectedTags() {
 // --- J. メイン実行ブロック（Turbolinks:load） ---
 
 document.addEventListener('turbolinks:load', function() {
+    completelyResetBootstrap();
     // 💡 Turbolinksによるページ遷移で、古いイベントリスナーが残るのを防ぐ
     removeEventListeners();
     // --- 1. 変数の再取得 (ファイルスコープ変数に代入) ---
@@ -384,6 +423,7 @@ document.addEventListener('turbolinks:load', function() {
     searchForm = searchModal ? searchModal.querySelector('form') : null;
     keywordTab = document.getElementById('keyword-tab');
     tagTab = document.getElementById('tag-tab');
+    const hintBtn = document.querySelector('[data-bs-target="#externalModalHint"]');
     const hiddenField = document.getElementById('use-ai-hidden-field');
     const normalSearchField = document.getElementById('search-input-field');
     const aiSearchTextarea = document.getElementById('search-input-textarea');
@@ -408,6 +448,11 @@ document.addEventListener('turbolinks:load', function() {
     // モーダルイベント
     if (searchModal) {
         searchModal.addEventListener('show.bs.modal', onSearchModalShow);
+    }
+    // オフキャンバスを開くボタン
+    if (hintBtn) {
+        hintBtn.removeAttribute('data-bs-toggle'); // 自動起動を殺す
+        hintBtn.addEventListener('click', openHintOffcanvas);
     }
     if (externalModal) {
         externalModal.addEventListener('show.bs.modal', onExternalModalShow);
