@@ -60,3 +60,38 @@
 .offcanvas-backdrop {
   z-index: 1060 !important;
 }
+
+.modal-title-scrollable {
+  display: block;
+  white-space: nowrap;      /* 改行させない（1行に収める） */
+  overflow-x: auto;         /* 横方向にスクロールを許可 */
+  overflow-y: hidden;       /* 縦方向は隠す */
+  -webkit-overflow-scrolling: touch; /* iOSでのスクロールを滑らかにする */
+  /* スクロールバーのデザイン（細くして邪魔にならないようにする） */
+  scrollbar-width: thin;    /* Firefox用 */
+  padding-bottom: 5px;      /* スクロールバーと文字の重なり防止 */
+}
+
+/* スクロールバーの見た目（Chrome, Safari用） */
+.modal-title-scrollable::-webkit-scrollbar {
+  height: 4px;              /* バーの高さ */
+}
+.modal-title-scrollable::-webkit-scrollbar-thumb {
+  background: #dee2e6;      /* バーの色（薄いグレー） */
+  border-radius: 10px;
+}
+
+.modal-header {
+  position: relative;
+}
+/* 右側の影 */
+.modal-header::after {
+  content: "";
+  position: absolute;
+  right: 50px;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  background: linear-gradient(to right, rgba(248,249,250,0), rgba(248,249,250,1));
+  pointer-events: none;
+}
