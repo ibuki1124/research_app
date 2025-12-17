@@ -42,13 +42,8 @@ CSV.parse(raw_csv_data, headers: true, encoding: 'UTF-8', skip_blanks: true) do 
   articles_to_insert << {
     tag: cleanup_string(data_hash[tag_key]),
     article_title: cleanup_string(data_hash['記事タイトル']),
-    published_date: cleanup_string(data_hash['記事投稿日']),
     detail_page_url: cleanup_string(data_hash['詳細ページURL']),
     lead_text: cleanup_string(data_hash['リード文']),
-    verification_target: cleanup_string(data_hash['検証対象']),
-    verification_process: cleanup_string(data_hash['検証過程']),
-    judgment: cleanup_string(data_hash['判定']),
-    source_reference: cleanup_string(data_hash['出典・参考']),
     created_at: Time.current,
     updated_at: Time.current
   }

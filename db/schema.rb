@@ -22,13 +22,8 @@ ActiveRecord::Schema.define(version: 2025_12_17_093611) do
   create_table "articles", force: :cascade do |t|
     t.string "tag"
     t.string "article_title"
-    t.date "published_date"
     t.string "detail_page_url"
     t.text "lead_text"
-    t.text "verification_target"
-    t.text "verification_process"
-    t.text "judgment"
-    t.text "source_reference"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
