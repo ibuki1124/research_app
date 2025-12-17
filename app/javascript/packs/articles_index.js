@@ -318,7 +318,7 @@ function startAiSearchTimer() {
 
         // 経過時間に応じた文言の切り替え
         if (secondsElapsed >= 40) {
-            if (statusText) statusText.textContent = "通常より時間がかかっています。もうしばらくお待ちください...";
+            if (statusText) statusText.innerHTML = "通常より時間がかかっています。<br>もうしばらくお待ちください...";
             if (subText) subText.classList.add('text-danger');
         } else if (secondsElapsed >= 20) {
             if (statusText) statusText.textContent = "回答を生成しています...";
