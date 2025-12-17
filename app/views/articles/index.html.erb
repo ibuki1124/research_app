@@ -5,10 +5,29 @@
     <div id="current-search-data" data-term="<%= @search_term %>" style="display: none;"></div>
   <% end %>
   <% if @search_term.present? && @use_ai %>
-    <h2>AI検索による関連記事</h2>
-    <%# ジョブ実行中、ここにローディングメッセージを表示 %>
-    <div class="ai-loading-message alert alert-info" role="alert">
-      <p>AIが関連記事を検索中です... (30秒程度かかります)</p>
+    <h2 class="mt-3">AI検索による関連記事</h2>
+    <div class="ai-loading-message card border-info shadow-sm">
+      <div class="card-body text-center py-5">
+        <%# Bootstrapのローディングアニメーション %>
+        <div class="spinner-border text-info mb-3" role="status" style="width: 3rem; height: 3rem;">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <h5 class="fw-bold text-dark mb-2" id="loading-main-text">AI情報検証を実行中です</h5>
+        <p class="text-secondary mb-3" id="loading-sub-text">検証には30秒ほどかかります</p>
+        <%# 経過時間とステータス表示 %>
+        <div class="d-flex justify-content-center align-items-center gap-2 mb-3">
+          <span class="badge rounded-pill bg-light text-dark border">
+            経過時間: <span id="ai-timer">0</span>秒
+          </span>
+          <span id="ai-status-announcement" class="small text-muted italic"></span>
+        </div>
+        <%# プログレスバー（アニメーション付き） %>
+        <div class="progress mx-auto" style="height: 10px; max-width: 400px;">
+          <div id="ai-progress-bar" 
+            class="progress-bar progress-bar-striped progress-bar-animated bg-info" 
+            role="progressbar" style="width: 0%"></div>
+        </div>
+      </div>
     </div>
   <% elsif @search_term.present? %>
     <div class="alert alert-warning" role="alert">

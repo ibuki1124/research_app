@@ -292,6 +292,67 @@ function handleVisibilityChange() {
     }
 }
 
+// --- AI検索タイマー変数 ---
+let aiSearchTimerInterval = null;
+let secondsElapsed = 0;
+
+function startAiSearchTimer() {
+    const timerElement = document.getElementById('ai-timer');
+    const progressBar = document.getElementById('ai-progress-bar');
+    const statusText = document.getElementById('ai-status-announcement');
+    const subText = document.getElementById('loading-sub-text');
+
+    if (!timerElement) return;
+
+    // タイマーリセット
+    secondsElapsed = 0;
+    if (aiSearchTimerInterval) clearInterval(aiSearchTimerInterval);
+
+    aiSearchTimerInterval = setInterval(() => {
+        secondsElapsed++;
+        timerElement.textContent = secondsElapsed;
+
+        // プログレスバーの疑似進捗 (30秒で100%に近づけるが、止まらないように調整)
+        let progress = Math.min((secondsElapsed / 30) * 100, 95);
+        if (progressBar) progressBar.style.width = `${progress}%`;
+
+        // 経過時間に応じた文言の切り替え
+        if (secondsElapsed >= 40) {
+            if (statusText) statusText.textContent = "通常より時間がかかっています。もうしばらくお待ちください...";
+            if (subText) subText.classList.add('text-danger');
+        } else if (secondsElapsed >= 20) {
+            if (statusText) statusText.textContent = "回答を生成しています...";
+        } else if (secondsElapsed >= 10) {
+            if (statusText) statusText.textContent = "情報を解析中...";
+        }
+    }, 1000);
+}
+
+// 既存のステータスチェック関数を拡張
+const originalCheckStatus = window.checkAiSearchResultStatus;
+window.checkAiSearchResultStatus = function() {
+    // コンテナが存在し、かつローディング中ならタイマー開始（初回のみ）
+    const container = document.getElementById('ai-search-results');
+    if (container && container.querySelector('.ai-loading-message') && !aiSearchTimerInterval) {
+        startAiSearchTimer();
+    }
+
+    // 元のfetch処理
+    const sessionId = container?.dataset.identifier;
+    if (!sessionId) return;
+
+    fetch(`/articles/ai_search_status?session_id=${sessionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'completed') {
+                // 完了したらタイマー停止
+                clearInterval(aiSearchTimerInterval);
+                aiSearchTimerInterval = null;
+                container.innerHTML = data.html_content;
+            }
+        });
+};
+
 // --- G. デバウンスとJQueryイベントハンドラ ---
 
 function debounce(func, timeout = 300) {
