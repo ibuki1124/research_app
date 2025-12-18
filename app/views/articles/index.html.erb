@@ -114,6 +114,14 @@
                     <input class="form-check-input" type="checkbox" role="switch" id="ai-check-toggle" <%= 'checked' if is_on %>>
                     <label class="form-check-label" for="ai-check-toggle" id="ai-check-label"></label>
                   </div>
+                  <button type="button" 
+                          class="btn btn-outline-primary btn-sm rounded-pill py-0 px-2 ms-2 d-flex align-items-center shadow-sm" 
+                          data-bs-toggle="offcanvas" 
+                          data-bs-target="#aiSearchHintOffcanvas" 
+                          style="font-size: 0.75rem; height: 24px; border-width: 1px;">
+                    <i class="fa-solid fa-circle-info me-1"></i>
+                    <span>使い方</span>
+                  </button>
                 </div>
                 <%# --- 1. 検索タイプ --- %>
                 <div class="col-md-4 <%= 'd-none' if is_on %>" id="search-type-container">
@@ -326,6 +334,74 @@
         </div>
         <p class="mb-1 small">全ての情報源が誤り、または重要な要素が大きく欠けていると一貫して指摘している。</p>
       </div>
+    </div>
+  </div>
+</div>
+
+<%# --- オフキャンバス：AI検索の使い方とON/OFFの違い --- %>
+<div class="offcanvas offcanvas-end shadow" id="aiSearchHintOffcanvas" tabindex="-1" aria-labelledby="aiSearchHintOffcanvasLabel" style="z-index: 1080; width: 85%; max-width: 450px;" data-bs-focus="false">
+  <div class="offcanvas-header bg-primary text-white">
+    <h5 class="offcanvas-title fw-bold" id="aiSearchHintOffcanvasLabel">
+      <i class="fa-solid fa-wand-magic-sparkles me-2"></i>AI情報検証ガイド
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body p-4">
+    <div class="mb-4">
+      <h6 class="fw-bold text-primary mb-2">
+        <i class="fa-solid fa-robot me-2"></i>AI情報検証とは？
+      </h6>
+      <p class="small text-dark leading-relaxed bg-light p-3 rounded border-start border-3 border-primary">
+        入力されたニュースや噂について、AIがリアルタイムでインターネット上の信頼できる情報源を調査し、その信憑性を5段階で判定する機能です。
+      </p>
+    </div>
+    <div class="row g-3">
+      <%# OFF時の説明 %>
+      <div class="col-12">
+        <div class="card border-0 bg-light shadow-sm">
+          <div class="card-body">
+            <h6 class="fw-bold text-secondary d-flex align-items-center mb-2">
+              <span class="badge bg-secondary me-2">OFF</span> キーワード検索
+            </h6>
+            <ul class="small text-muted ps-3 mb-0" style="list-style-type: none;">
+              <li><i class="fa-solid fa-check-circle me-1 text-secondary"></i> 本アプリが保存している過去記事から探す</li>
+              <li><i class="fa-solid fa-check-circle me-1 text-secondary"></i> 特定の単語やタグで素早く絞り込む</li>
+              <li><i class="fa-solid fa-check-circle me-1 text-secondary"></i> 待ち時間なし（即時表示）</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <%# ON時の説明 %>
+      <div class="col-12">
+        <div class="card border-info-subtle bg-info-subtle border-0 shadow-sm">
+          <div class="card-body">
+            <h6 class="fw-bold text-primary d-flex align-items-center mb-2">
+              <span class="badge bg-primary me-2">ON</span> AI情報検証
+            </h6>
+            <ul class="small text-dark ps-3 mb-0" style="list-style-type: none;">
+              <li><i class="fa-solid fa-magnifying-glass me-1 text-primary"></i> <strong>世の中で話題の最新ニュース</strong>を調査</li>
+              <li><i class="fa-solid fa-clock me-1 text-primary"></i> 完了まで約30秒ほど必要</li>
+              <li><i class="fa-solid fa-pen-fancy me-1 text-primary"></i> 文章で詳しく入力するほど精度が向上</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <%# 使い分けのコツ %>
+    <div class="mt-4 p-3 rounded-3 bg-warning-subtle border border-warning-subtle shadow-sm">
+      <h6 class="fw-bold small mb-2 d-flex align-items-center">
+        <i class="fa-solid fa-lightbulb text-warning me-2 fa-lg"></i>
+        使い分けのヒント
+      </h6>
+      <div class="small text-dark" style="line-height: 1.6;">
+        <p class="mb-2"><strong>通常検索（OFF）</strong>で期待する記事が見つからない場合は、<strong>AI検証（ON）</strong>に切り替えてみてください。</p>
+        <p class="mb-0">「あのニュース本当かな？」と疑問に思った内容をそのまま文章で入力することで、AIが外部サイトから新しい情報を探し出します。</p>
+      </div>
+    </div>
+    <div class="text-center mt-4">
+      <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="offcanvas">
+        閉じる
+      </button>
     </div>
   </div>
 </div>

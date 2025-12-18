@@ -76,11 +76,25 @@ function openSearchModal(e) {
 // オフキャンバスを手動で開く（モーダルとの競合を避ける）
 function openHintOffcanvas(e) {
     e.preventDefault();
-    // 💡 幕のゴミだけ消す（モーダルの幕は消さないようにする）
     document.querySelectorAll('.offcanvas-backdrop').forEach(b => b.remove());
     const el = document.getElementById('externalModalHint');
-    // 💡 focus: false オプションをJSで強制適用
-    const offcanvas = new bootstrap.Offcanvas(el, { focus: false });
+    if (!el) return;
+    // 既存のインスタンスがあれば破棄してから新しく作る（二重登録防止）
+    const existing = bootstrap.Offcanvas.getInstance(el);
+    if (existing) existing.dispose();
+    const offcanvas = new bootstrap.Offcanvas(el, { focus: false, backdrop: true });
+    offcanvas.show();
+}
+
+// AI検索ガイド用のハンドラ
+function openAiSearchHintOffcanvas(e) {
+    e.preventDefault();
+    document.querySelectorAll('.offcanvas-backdrop').forEach(b => b.remove());
+    const el = document.getElementById('aiSearchHintOffcanvas');
+    if (!el) return;
+    const existing = bootstrap.Offcanvas.getInstance(el);
+    if (existing) existing.dispose();
+    const offcanvas = new bootstrap.Offcanvas(el, { focus: false, backdrop: true });
     offcanvas.show();
 }
 
@@ -510,10 +524,16 @@ document.addEventListener('turbolinks:load', function() {
     if (searchModal) {
         searchModal.addEventListener('show.bs.modal', onSearchModalShow);
     }
-    // オフキャンバスを開くボタン
+    // 記事モーダル内のヒントボタン
     if (hintBtn) {
         hintBtn.removeAttribute('data-bs-toggle'); // 自動起動を殺す
         hintBtn.addEventListener('click', openHintOffcanvas);
+    }
+    // 検索モーダル内のAIガイドボタン
+    const aiHintBtn = document.querySelector('[data-bs-target="#aiSearchHintOffcanvas"]');
+    if (aiHintBtn) {
+        aiHintBtn.removeAttribute('data-bs-toggle'); // 自動起動を殺す
+        aiHintBtn.addEventListener('click', openAiSearchHintOffcanvas);
     }
     if (externalModal) {
         externalModal.addEventListener('show.bs.modal', onExternalModalShow);
