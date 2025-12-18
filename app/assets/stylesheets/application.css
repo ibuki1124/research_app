@@ -85,7 +85,7 @@
   position: relative;
 }
 /* 右側の影 */
-.modal-header::after {
+#externalModal .modal-header::after {
   content: "";
   position: absolute;
   right: 50px;
