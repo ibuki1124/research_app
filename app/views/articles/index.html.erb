@@ -210,49 +210,80 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
                 <a id="openInNewTab" href="#" target="_blank" class="btn btn-outline-primary">元サイトで開く (別タブ)</a>
               </div>
-              <div>
+              <div class="position-relative">
                 <button 
-                  class="btn btn-outline-warning" 
+                  class="btn btn-outline-secondary rounded-circle p-2" 
                   type="button" 
                   data-bs-toggle="offcanvas" 
                   data-bs-target="#externalModalHint" 
                   aria-controls="externalModalHint" 
+                  style="width: 42px; height: 42px;" 
+                  title="ヘルプを表示"
                 >
-                  <i class="fa-solid fa-lightbulb"></i>
+                  <i class="fa-solid fa-circle-question fa-lg"></i>
                 </button>
+                <span class="position-absolute top-0 badge rounded-pill bg-danger" style="font-size: 0.6rem; right: -5px; transform: translateY(-30%);">
+                  ヘルプ
+                </span>
               </div>
             </div>
         </div>
     </div>
 </div>
 
-<%# ======================================================= %>
-<%# 【新規】ヒント Offcanvas コンポーネント %>
-<%# ======================================================= %>
-
-<div class="offcanvas offcanvas-start w-75" id="externalModalHint" aria-labelledby="externalModalHintLabel" style="z-index: 1065;" data-bs-focus="false" data-bs-scroll="true">
-    <div class="offcanvas-header bg-light">
-        <h5 class="offcanvas-title" id="externalModalHintLabel"><i class="fa-solid fa-lightbulb text-warning"></i> ヒント: 外部サイト表示時の注意点</h5>
-        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+<%# --- ヒント Offcanvas コンポーネント --- %>
+<div class="offcanvas offcanvas-end shadow" id="externalModalHint" aria-labelledby="externalModalHintLabel" style="z-index: 1065; width: 80%;" data-bs-focus="false" data-bs-scroll="true">
+    <div class="offcanvas-header bg-dark text-white">
+        <h5 class="offcanvas-title fw-bold" id="externalModalHintLabel">
+            <i class="fa-solid fa-circle-question me-2"></i>ヘルプ
+        </h5>
+        <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <div class="offcanvas-body">
-        <p>記事を表示する際、セキュリティ上の制約により、いくつかの問題が発生する場合があります。</p>
+    <div class="offcanvas-body p-4">
+        <div class="mb-4">
+            <h6 class="fw-bold d-flex align-items-center text-primary">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>表示エラー・真っ白な場合
+            </h6>
+            <div class="p-3 bg-light border rounded mt-2">
+                <p class="small mb-2">
+                  サイト内の一部機能は、セキュリティやプライバシー保護のために制限されています。
+                </p>
+            </div>
+        </div>
 
-        <h6>接続エラー/空白が表示された場合</h6>
-        <p class="alert alert-warning">
-            「～～で接続が拒否されました」<br>
-            あるいは空白画面が表示された場合は、このアプリ内での表示が制限されている可能性があります。
-        </p>
-        <p>この場合、フッターの「元サイトで開く (別タブ)」ボタンをクリックし、ブラウザで直接サイトを確認してください。</p>
+        <div class="mb-4">
+            <h6 class="fw-bold d-flex align-items-center text-primary mb-3">
+                <i class="fa-solid fa-shield-halved me-2"></i>制限される主な機能
+            </h6>
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item px-0 bg-transparent border-0 py-1">
+                  <i class="fa-solid fa-ban me-2 text-danger opacity-75"></i>動画のフルスクリーン表示
+                </li>
+                <li class="list-group-item px-0 bg-transparent border-0 py-1">
+                  <i class="fa-solid fa-ban me-2 text-danger opacity-75"></i>位置情報の取得
+                </li>
+                <li class="list-group-item px-0 bg-transparent border-0 py-1">
+                  <i class="fa-solid fa-ban me-2 text-danger opacity-75"></i>ファイルのダウンロード
+                </li>
+                <li class="list-group-item px-0 bg-transparent border-0 py-1">
+                  <i class="fa-solid fa-ban me-2 text-danger opacity-75"></i>サイトへのログイン
+                </li>
+            </ul>
+        </div>
 
-        <h6>ページ内機能の制限</h6>
-        <p>ポップアップ、ダウンロード、位置情報サービスなど、一部のブラウザ機能が制限される場合があります。</p>
-        <p>これらの機能を利用するには、元サイトで直接開いてください。</p>
+        <div class="alert alert-info border-0 shadow-sm small py-3 mt-2" role="alert">
+          <div class="d-flex align-items-center mb-2 fw-bold">
+            <i class="fa-solid fa-lightbulb me-2"></i>解決方法
+          </div>
+          <p class="mb-0 text-dark">
+            すべての機能を利用するには、画面下の<strong>「元サイトで開く」</strong>ボタンから別タブで閲覧してください。
+          </p>
+        </div>
     </div>
 </div>
 
 <%# --- オフキャンバス：判定基準の一覧 --- %>
-<div class="offcanvas offcanvas-end shadow" tabindex="-1" id="scoreCriteriaOffcanvas" aria-labelledby="scoreCriteriaOffcanvasLabel" style="z-index: 1065; width: 80%;" data-bs-focus="false" >
+<div class="offcanvas offcanvas-end shadow" id="scoreCriteriaOffcanvas" aria-labelledby="scoreCriteriaOffcanvasLabel" style="z-index: 1065; width: 80%;" data-bs-focus="false" >
   <div class="offcanvas-header bg-light">
     <h5 class="offcanvas-title fw-bold" id="scoreCriteriaOffcanvasLabel">信憑性スコアの判定基準</h5>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
