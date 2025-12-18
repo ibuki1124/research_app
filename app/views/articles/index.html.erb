@@ -1,11 +1,11 @@
 <%# ---------------------------------------------------- %>
 <%# 【非同期AI検索結果のコンテナ】 %>
-<div id="ai-search-results" data-identifier="<%= @ai_search_id %>">
+<div class="mt-3" id="ai-search-results" data-identifier="<%= @ai_search_id %>">
   <% if @search_term.present? %>
     <div id="current-search-data" data-term="<%= @search_term %>" style="display: none;"></div>
   <% end %>
   <% if @search_term.present? && @use_ai %>
-    <div class="ai-loading-message card border-info shadow-sm mt-3">
+    <div class="ai-loading-message card border-info shadow-sm">
       <div class="card-body text-center py-5">
         <%# Bootstrapのローディングアニメーション %>
         <div class="spinner-border text-info mb-3" role="status" style="width: 3rem; height: 3rem;">
@@ -29,8 +29,30 @@
       </div>
     </div>
   <% elsif @search_term.present? %>
-    <div class="alert alert-warning" role="alert">
-      <p>AI検索を実行するには、AI検索を有効化してください。</p>
+    <div class="card border-0 shadow-sm bg-light mb-4">
+      <div class="card-body py-4 px-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div class="d-flex align-items-center">
+            <div class="bg-white rounded-circle p-3 shadow-sm me-3 text-primary">
+              <i class="fa-solid fa-wand-magic-sparkles fa-lg"></i>
+            </div>
+            <div>
+              <h6 class="mb-1 fw-bold text-dark">AI情報検証はオフになっています</h6>
+              <p class="mb-0 text-muted small">
+                AI検索を有効にすると、インターネット上の最新情報を元に内容の信憑性を自動で検証できます。
+              </p>
+            </div>
+          </div>
+          <div>
+            <button type="button" 
+                    class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#searchModal">
+              <i class="fa-solid fa-sliders me-1"></i>設定を変更して検索
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   <% end %>
 </div>
@@ -227,4 +249,52 @@
         <p>ポップアップ、ダウンロード、位置情報サービスなど、一部のブラウザ機能が制限される場合があります。</p>
         <p>これらの機能を利用するには、元サイトで直接開いてください。</p>
     </div>
+</div>
+
+<%# --- オフキャンバス：判定基準の一覧 --- %>
+<div class="offcanvas offcanvas-end shadow" tabindex="-1" id="scoreCriteriaOffcanvas" aria-labelledby="scoreCriteriaOffcanvasLabel" style="z-index: 1065; width: 80%;" data-bs-focus="false" >
+  <div class="offcanvas-header bg-light">
+    <h5 class="offcanvas-title fw-bold" id="scoreCriteriaOffcanvasLabel">信憑性スコアの判定基準</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <p class="small text-muted mb-4">日本の主要なファクトチェック機関の基準を参考に、AIが5段階で評価しています。</p>
+    
+    <div class="list-group list-group-flush">
+      <div class="list-group-item border-start border-4 border-success">
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1 fw-bold text-success">5: 正確</h6>
+        </div>
+        <p class="mb-1 small">信頼できる情報源の全てが真実性を強く支持しており、誤りが無い。</p>
+      </div>
+
+      <div class="list-group-item border-start border-4 border-info">
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1 fw-bold text-info">4: ほぼ正確</h6>
+        </div>
+        <p class="mb-1 small">大半が真実性を支持し大部分は正しいが、一部に軽微な誤りがある程度。</p>
+      </div>
+
+      <div class="list-group-item border-start border-4 border-warning">
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1 fw-bold text-warning">3: 真偽不明</h6>
+        </div>
+        <p class="mb-1 small">根拠が不十分であり検証できない。または、情報源同士の意見が分かれている。</p>
+      </div>
+
+      <div class="list-group-item border-start border-4 border-orange" style="border-left-color: #fd7e14 !important;">
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1 fw-bold" style="color: #fd7e14;">2: 不正確</h6>
+        </div>
+        <p class="mb-1 small">一部は正しいが、重要な部分に誤りや欠落がある、またはミスリードの可能性が高い。</p>
+      </div>
+
+      <div class="list-group-item border-start border-4 border-danger">
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1 fw-bold text-danger">1: 誤り</h6>
+        </div>
+        <p class="mb-1 small">全ての情報源が誤り、または重要な要素が大きく欠けていると一貫して指摘している。</p>
+      </div>
+    </div>
+  </div>
 </div>

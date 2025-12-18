@@ -4,84 +4,109 @@
   verdict = judgment_data['verdict']
   credibility_score = judgment_data['credibility_score'].to_i
   
-  # 1. 判定結果に基づいた色とテキストの設定
-  if verdict == 'misinformation'
-    color_code = '#c00'; display_text = '偽・誤情報の可能性が高い'
-    bg_color = '#fdd'
-  elsif verdict == 'unverified'
-    color_code = '#fa0'; display_text = '真偽不明'
-    bg_color = '#ffe'
+  # 色とアイコンの設定
+  case verdict
+  when 'misinformation'
+    header_class = 'bg-danger text-white'
+    text_class = 'text-danger'
+    border_class = 'border-danger'
+    display_text = '偽・誤情報の可能性が高い'; icon = 'fa-triangle-exclamation'
+  when 'unverified'
+    header_class = 'bg-warning text-dark'
+    text_class = 'text-warning'
+    border_class = 'border-warning'
+    display_text = '真偽不明'; icon = 'fa-circle-question'
   else # 'true'
-    color_code = '#0a0'; display_text = '真実の可能性が高い'
-    bg_color = '#dfd'
-  end
-
-  # 2. Credibility Score (1-5) の説明テキストの設定
-  score_explanation = case credibility_score
-    when 5 then "正確: 信頼できる情報源の全てが、真実性を一貫して強く支持しており、誤りが無く重要な要素が欠けていない。"
-    when 4 then "ほぼ正確: 信頼できる情報源の大半が真実性を支持し、重要な部分を含む大部分は正しいが、一部に軽微な誤りの示唆がある程度。"
-    when 3 then "真偽不明: 根拠がないか不十分であり事実の検証ができない。または、真偽について意見が分かれている（情報源が矛盾している）。"
-    when 2 then "不正確: 一部は正しいが、信頼できる情報源が重要な部分に誤りや欠落があると複数指摘している、またはミスリードの可能性が高い。"
-    when 1 then "誤り: 信頼できる情報源の全てが、検索内容を誤りである、または重要な要素が大きく欠けていると一貫して強く指摘している。"
-    else "問題が発生したため正常にスコアを算出できませんでした。"
+    header_class = 'bg-success text-white'
+    text_class = 'text-success'
+    border_class = 'border-success'
+    display_text = '真実の可能性が高い'; icon = 'fa-circle-check'
   end
 %>
 
-<div id="ai-search-results-content" style="border: 1px solid <%= color_code %>; padding: 15px; margin-top: 20px; background-color: <%= bg_color %>;">
-  
-  <h3>🚨 AIによる情報検証結果: <%= display_text %> 🚨</h3> 
-  
-  <p>
-    <strong>信憑性スコア:</strong>
-    <br>
-    <span style="font-size: 1.2em; color: <%= color_code %>;">
-      <%= credibility_score %>/5
-    </span>
-    <br>
-    (<%= score_explanation %>)
-  </p>
-  <p>
-    <strong>判定根拠:</strong>
-    <br>
-    <%= judgment_data['reason'] %>
-  </p>
+<%# 検証結果メインカード %>
+<div id="ai-search-results-content" class="card shadow-sm mt-4 <%= border_class %>">
+  <div class="card-header <%= header_class %> py-3">
+    <div class="d-flex align-items-center">
+      <i class="fa-solid <%= icon %> fa-2x me-3"></i>
+      <h5 class="mb-0 fw-bold" style="line-height: 1.4;">
+        AI情報検証結果<br>
+        <%= display_text %>
+      </h5>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="row g-4">
+      <%# 左側：スコア %>
+      <div class="col-md-4 text-center border-end">
+        <div class="text-muted small mb-1">信憑性スコア</div>
+        <div class="display-5 fw-bold <%= text_class %> mb-2">
+          <%= credibility_score %><span class="fs-4 text-muted"> / 5</span>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill" 
+                type="button" 
+                data-bs-toggle="offcanvas" 
+                data-bs-target="#scoreCriteriaOffcanvas" 
+                aria-controls="scoreCriteriaOffcanvas">
+          <i class="fa-solid fa-circle-info me-1"></i>判定基準を確認
+        </button>
+      </div>
+      <%# 右側：根拠 %>
+      <div class="col-md-8 d-flex flex-column">
+        <div class="text-muted small mb-1 fw-bold">判定の根拠:</div>
+        <p class="card-text text-dark leading-relaxed mb-auto">
+          <%= judgment_data['reason'] %>
+        </p>
+        <%# AI使用に関する注意書き %>
+        <div class="mt-3 p-2 bg-light rounded border-start border-3 border-secondary">
+          <p class="mb-0 text-secondary" style="font-size: 0.75rem; line-height: 1.5;">
+            <i class="fa-solid fa-circle-exclamation me-1"></i>
+            <strong>免責事項:</strong> AIによる自動判定は、インターネット上の公開情報を元にした推測であり、必ずしも正確性を保証するものではありません。重大な判断を行う際は、複数の公的な一次ソースを直接確認してください。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-
-<div class="border p-3 mt-3 bg-light">
-  <h4>参照された外部情報</h4>
-  <% if external_articles.present? %>
-    <ul class="list-unstyled accordion" id="external-articles-list">
-      <% external_articles.each_with_index do |article, index| %>
-        <% unique_id = "collapse-search-#{index}" %>
-        <li class="mb-3 pb-2 border-bottom" style="border-bottom-style: dashed !important;">
-          <%# 💡 元の記事タイトル %>
-          <% if article['url'].present? %>
-            <a href="<%= article['url'] %>" target="_blank">
-              <b><%= article['title'] %></b> (元の記事へ)
-            </a>
-          <% else %>
-            <b><%= article['title'] %></b> (リンクなし)
-          <% end %>
-          <%# 💡 Google検索リンク %>
-          <% if article['search_url'].present? %>
-            <div class="mt-2">
-              <span class="toggle-icon-wrapper" data-bs-toggle="collapse" data-bs-target="#<%= unique_id %>" aria-expanded="false" aria-controls="<%= unique_id %>" style="cursor: pointer; font-size: 0.9em;">
-                <i class="fa-solid fa-chevron-right toggle-icon me-1"></i>
-                リンクが開けない場合はこちら
-              </span>
+<%# 参照された外部情報セクション %>
+<div class="card mt-4 border-0 bg-light">
+  <div class="card-body p-4">
+    <h5 class="fw-bold mb-3 border-bottom pb-2">参照された外部情報</h5>
+    <% if external_articles.present? %>
+      <div class="list-group list-group-flush bg-transparent">
+        <% external_articles.each_with_index do |article, index| %>
+          <% unique_id = "collapse-search-#{index}" %>
+          <div class="list-group-item bg-transparent px-0 border-0 mb-3">
+            <div class="d-flex align-items-start">
+              <i class="fa-solid fa-arrow-up-right-from-square text-muted me-2 mt-1"></i>
+              <div>
+                <% if article['url'].present? %>
+                  <a href="<%= article['url'] %>" target="_blank" class="fw-bold text-decoration-none text-primary d-block">
+                    <%= article['title'] %>
+                  </a>
+                <% else %>
+                  <span class="fw-bold text-dark d-block"><%= article['title'] %></span>
+                <% end %>
+                <%# Google検索リンク（折りたたみ） %>
+                <% if article['search_url'].present? %>
+                  <div class="mt-2">
+                    <a class="text-muted small text-decoration-none d-flex align-items-center" data-bs-toggle="collapse" href="#<%= unique_id %>" role="button">
+                      <i class="fa-solid fa-caret-right me-1"></i> リンクが開けない場合はこちら
+                    </a>
+                    <div class="collapse mt-2" id="<%= unique_id %>">
+                      <a href="<%= article['search_url'] %>" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-3 rounded-pill">
+                        <i class="fa-brands fa-google me-1"></i> Google検索で確認
+                      </a>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
             </div>
-            <div class="collapse mt-2" id="<%= unique_id %>" data-bs-parent="#external-articles-list">
-              <span class="d-inline-block p-2 border rounded" style="background-color: #e6f0ff; border-color: #c0d8ff;">
-                <a href="<%= article['search_url'] %>" target="_blank" style="color: #004085; font-size: 0.95em; text-decoration: none;">
-                  <i class="fa-solid fa-magnifying-glass fa-lg"></i> Google検索で確認
-                </a>
-              </span>
-            </div>
-          <% end %>
-        </li>
-      <% end %>
-    </ul>
-  <% else %>
-    <p>参照された外部情報は見つかりませんでした。</p>
-  <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-muted italic">参照された外部情報は見つかりませんでした。</p>
+    <% end %>
+  </div>
 </div>
